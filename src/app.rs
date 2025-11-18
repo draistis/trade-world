@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use leptos::prelude::*;
 use leptos_meta::{provide_meta_context, MetaTags, Stylesheet, Title};
 use leptos_router::{
@@ -5,7 +7,7 @@ use leptos_router::{
     StaticSegment,
 };
 
-use crate::entities::GameState;
+use crate::entities::{GameState, Tile};
 use crate::views::*;
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
@@ -28,7 +30,61 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
 
 #[component]
 pub fn ProvideGameState() -> impl IntoView {
-    let game_state = GameState::new();
+    let mut game_state = GameState::new();
+
+    let mut tiles = Vec::new();
+    tiles.push(Tile {
+        name: "STR-1001".to_string(),
+        description: "Test tile 1".to_string(),
+        resources: HashMap::from([
+            ("Water".to_string(), "60%".to_string()),
+            ("Wood".to_string(), "40%".to_string()),
+        ]),
+        price: 490.90,
+        owned: RwSignal::new(false),
+        row: 0,
+        col: 0,
+    });
+    tiles.push(Tile {
+        name: "STR-1002".to_string(),
+        description: "Test tile 2".to_string(),
+        resources: HashMap::from([
+            ("Water".to_string(), "20%".to_string()),
+            ("Wood".to_string(), "20%".to_string()),
+            ("Grass".to_string(), "53%".to_string()),
+        ]),
+        price: 121.00,
+        owned: RwSignal::new(true),
+        row: 0,
+        col: 1,
+    });
+    tiles.push(Tile {
+        name: "STR-1003".to_string(),
+        description: "Test tile 3".to_string(),
+        resources: HashMap::from([
+            ("Water".to_string(), "10%".to_string()),
+            ("Wood".to_string(), "78%".to_string()),
+        ]),
+        price: 525.00,
+        owned: RwSignal::new(false),
+        row: 1,
+        col: 0,
+    });
+    tiles.push(Tile {
+        name: "STR-1004".to_string(),
+        description: "Test tile 4".to_string(),
+        resources: HashMap::from([
+            ("Water".to_string(), "80%".to_string()),
+            ("Fish".to_string(), "30%".to_string()),
+        ]),
+        price: 710.55,
+        owned: RwSignal::new(false),
+        row: 1,
+        col: 1,
+    });
+
+    game_state.tiles = RwSignal::new(tiles);
+
     provide_context(game_state);
 }
 

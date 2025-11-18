@@ -64,6 +64,7 @@ pub struct GameState {
     pub workers: Workers,
     pub buildings: Buildings,
     pub inventory: RwSignal<HashMap<String, f64>>,
+    pub tiles: RwSignal<Vec<super::tile::Tile>>,
 }
 
 impl GameState {
@@ -74,6 +75,7 @@ impl GameState {
             workers: Workers::new(),
             buildings: Buildings::new(),
             inventory: RwSignal::new(HashMap::new()),
+            tiles: RwSignal::new(Vec::new()),
         }
     }
 }
