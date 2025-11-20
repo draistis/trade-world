@@ -4,7 +4,7 @@ use leptos::prelude::*;
 use leptos_meta::{provide_meta_context, MetaTags, Stylesheet, Title};
 use leptos_router::{
     components::{Route, Router, Routes},
-    StaticSegment,
+    path, StaticSegment,
 };
 
 use crate::entities::{GameState, Tile};
@@ -44,6 +44,7 @@ pub fn ProvideGameState() -> impl IntoView {
         owned: RwSignal::new(false),
         row: 0,
         col: 0,
+        ..Default::default()
     });
     tiles.push(Tile {
         name: "STR-1002".to_string(),
@@ -57,6 +58,7 @@ pub fn ProvideGameState() -> impl IntoView {
         owned: RwSignal::new(true),
         row: 0,
         col: 1,
+        ..Default::default()
     });
     tiles.push(Tile {
         name: "STR-1003".to_string(),
@@ -69,6 +71,7 @@ pub fn ProvideGameState() -> impl IntoView {
         owned: RwSignal::new(false),
         row: 1,
         col: 0,
+        ..Default::default()
     });
     tiles.push(Tile {
         name: "STR-1004".to_string(),
@@ -81,6 +84,7 @@ pub fn ProvideGameState() -> impl IntoView {
         owned: RwSignal::new(false),
         row: 1,
         col: 1,
+        ..Default::default()
     });
 
     game_state.tiles = RwSignal::new(tiles);
@@ -109,6 +113,7 @@ pub fn App() -> impl IntoView {
                     <Route path=StaticSegment("") view=HomePage />
                     <Route path=StaticSegment("/forestry") view=ForestryPage />
                     <Route path=StaticSegment("/tile-map") view=TileMapPage />
+                    <Route path=path!("/tile/:id") view=TilePage />
                 </Routes>
             </main>
         </Router>

@@ -1,10 +1,22 @@
 use leptos::prelude::*;
+use leptos_router::hooks::use_params;
 
 use crate::entities::GameState;
+use crate::views::tile::TileParams;
 
 #[component]
 pub fn Header() -> impl IntoView {
     let context = use_context::<GameState>().expect("couldn't get context");
+
+    let params = use_params::<TileParams>();
+    let id = move || {
+        params
+            .read()
+            .as_ref()
+            .ok()
+            .and_then(|params| params.id.clone())
+            .unwrap_or_default()
+    };
 
     view! {
         <nav class="bg-white border-gray-200 px-4 lg:px-6 py-2.5 dark:bg-gray-800">
@@ -19,6 +31,7 @@ pub fn Header() -> impl IntoView {
                         Trade World
                     </span>
                 </a>
+                <div class="flex text-white text-xl">{id}</div>
                 <div class="flex items-center order-2 text-white text-xl">
                     {move || format!("{:.2}", context.cash.get())}
                 </div>

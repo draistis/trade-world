@@ -1,5 +1,6 @@
 use crate::{components::header::Header, entities::GameState};
 use leptos::{ev::MouseEvent, prelude::*};
+use leptos_router::components::A;
 
 #[component]
 pub fn TileMapPage() -> impl IntoView {
@@ -23,7 +24,7 @@ pub fn TileMapPage() -> impl IntoView {
 #[component]
 fn TileMap() -> impl IntoView {
     view! {
-        <div class="w-full h-full overflow-hidden p-20 ml-0 border border-green-500">
+        <div class="w-full h-full overflow-hidden p-2 ml-0">
             <Grid />
         </div>
     }
@@ -76,8 +77,16 @@ fn TileOverview() -> impl IntoView {
             <div class="p-6 border-t border-gray-700 flex justify-between items-center h-18">
                 <Show
                     when=move || !tile_info.get().owned.get()
-                    fallback=|| {
-                        view! { <div class="text-lg">"You already own this tile."</div> }
+                    fallback=move || {
+                        view! {
+                            <div class="text-lg">"Purchased"</div>
+                            <A
+                                href=format!("/tile/{}", tile_info.get().name)
+                                attr:class="px-6 py-2 border-2 border-white hover:bg-white hover:text-black transition-colors"
+                            >
+                                "Manage tile"
+                            </A>
+                        }
                     }
                 >
                     <div class="text-lg">
@@ -141,7 +150,6 @@ fn Grid() -> impl IntoView {
 
     view! {
         <svg
-            class="border border-red-700"
             width="100%"
             height="100%"
             class:cursor-grabbing=move || is_dragging.get()

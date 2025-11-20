@@ -37,23 +37,23 @@ pub fn ForestryPage() -> impl IntoView {
         }
     };
     let hire_harvester_opr = move || {
-        *game_state.workers.advanced.write() += 1;
+        // *game_state.tiles.get().get(0)..advanced.write() += 1;
     };
 
     Effect::new(move |_| {
         set_interval(
             move || {
-                if game_state.workers.advanced.get() > 0 {
-                    *game_state.cash.write() -= 1. * game_state.workers.advanced.get() as f64;
-                }
+                // if game_state.workers.advanced.get() > 0 {
+                //     *game_state.cash.write() -= 1. * game_state.workers.advanced.get() as f64;
+                // }
             },
             Duration::from_secs(60),
         );
         let handle = set_interval_with_handle(
             move || {
-                if game_state.workers.advanced.get() > 0 {
-                    *game_state.logs.write() += game_state.workers.advanced.get();
-                }
+                // if game_state.workers.advanced.get() > 0 {
+                //     *game_state.logs.write() += game_state.workers.advanced.get();
+                // }
             },
             Duration::from_secs(10),
         )
@@ -86,7 +86,7 @@ pub fn ForestryPage() -> impl IntoView {
             <hr class="w-full my-4 border-t border-gray-200" />
             <div class="flex gap-8 justify-center items-center h-8">
                 <div>"Hire harvester operator ($30/h) [1 tree/min]"</div>
-                <div>"["{move || game_state.workers.advanced.get()}"]"</div>
+                // <div>"["{move || game_state.workers.advanced.get()}"]"</div>
                 <Button
                     variant=ButtonVariant::Red
                     on_click=hire_harvester_opr
