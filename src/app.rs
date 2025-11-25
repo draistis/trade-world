@@ -21,7 +21,7 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                 <HydrationScripts options />
                 <MetaTags />
             </head>
-            <body class="antialiased bg-[#0a0a0a] text-[#fafafa]">
+            <body class="antialiased bg-[#151515] text-[#fafafa]">
                 <App />
             </body>
         </html>
@@ -34,54 +34,54 @@ pub fn ProvideGameState() -> impl IntoView {
 
     let mut tiles = Vec::new();
     tiles.push(Tile {
-        name: "STR-1001".to_string(),
-        description: "Test tile 1".to_string(),
+        id: "STR-1001",
+        description: "Test tile 1",
         resources: HashMap::from([
             ("Water".to_string(), "60%".to_string()),
             ("Wood".to_string(), "40%".to_string()),
         ]),
         price: 490.90,
-        owned: RwSignal::new(false),
+        is_owned: RwSignal::new(false),
         row: 0,
         col: 0,
         ..Default::default()
     });
     tiles.push(Tile {
-        name: "STR-1002".to_string(),
-        description: "Test tile 2".to_string(),
+        id: "STR-1002",
+        description: "Test tile 2",
         resources: HashMap::from([
             ("Water".to_string(), "20%".to_string()),
             ("Wood".to_string(), "20%".to_string()),
             ("Grass".to_string(), "53%".to_string()),
         ]),
         price: 121.00,
-        owned: RwSignal::new(true),
+        is_owned: RwSignal::new(true),
         row: 0,
         col: 1,
         ..Default::default()
     });
     tiles.push(Tile {
-        name: "STR-1003".to_string(),
-        description: "Test tile 3".to_string(),
+        id: "STR-1003",
+        description: "Test tile 3",
         resources: HashMap::from([
             ("Water".to_string(), "10%".to_string()),
             ("Wood".to_string(), "78%".to_string()),
         ]),
         price: 525.00,
-        owned: RwSignal::new(false),
+        is_owned: RwSignal::new(false),
         row: 1,
         col: 0,
         ..Default::default()
     });
     tiles.push(Tile {
-        name: "STR-1004".to_string(),
-        description: "Test tile 4".to_string(),
+        id: "STR-1004",
+        description: "Test tile 4",
         resources: HashMap::from([
             ("Water".to_string(), "80%".to_string()),
             ("Fish".to_string(), "30%".to_string()),
         ]),
         price: 710.55,
-        owned: RwSignal::new(false),
+        is_owned: RwSignal::new(false),
         row: 1,
         col: 1,
         ..Default::default()

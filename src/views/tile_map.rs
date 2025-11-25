@@ -4,7 +4,7 @@ use leptos_router::components::A;
 
 #[component]
 pub fn TileMapPage() -> impl IntoView {
-    provide_context::<SelectedTile>(SelectedTile(RwSignal::new(String::from("STR-1001"))));
+    provide_context::<SelectedTile>(SelectedTile(RwSignal::new("STR-1001")));
 
     view! {
         <div class="h-screen flex flex-col">
@@ -31,7 +31,7 @@ fn TileMap() -> impl IntoView {
 }
 
 #[derive(Debug, Clone)]
-struct SelectedTile(RwSignal<String>);
+struct SelectedTile(RwSignal<&'static str>);
 
 #[component]
 fn TileOverview() -> impl IntoView {
@@ -45,7 +45,7 @@ fn TileOverview() -> impl IntoView {
             .tiles
             .get()
             .iter()
-            .find(|tile| tile.name == selected_tile.0.get())
+            .find(|tile| tile.id == selected_tile.0.get())
             .cloned()
             .unwrap_or_default()
     });
@@ -53,14 +53,14 @@ fn TileOverview() -> impl IntoView {
     let buy_tile = move |_| {
         if game_state.cash.get() >= tile_info.get().price {
             *game_state.cash.write() -= tile_info.get().price;
-            tile_info.get().owned.set(true);
+            tile_info.get().is_owned.set(true);
         }
     };
 
     view! {
         <div class="flex flex-col h-full">
             <div class="p-6 border-b border-gray-700">
-                <div class="text-2xl font-semibold">{move || tile_info.get().name}</div>
+                <div class="text-2xl font-semibold">{move || tile_info.get().id}</div>
             </div>
 
             <div class="flex-1 p-6 space-y-4 overflow-y-auto">
@@ -76,12 +76,12 @@ fn TileOverview() -> impl IntoView {
 
             <div class="p-6 border-t border-gray-700 flex justify-between items-center h-18">
                 <Show
-                    when=move || !tile_info.get().owned.get()
+                    when=move || !tile_info.get().is_owned.get()
                     fallback=move || {
                         view! {
                             <div class="text-lg">"Purchased"</div>
                             <A
-                                href=format!("/tile/{}", tile_info.get().name)
+                                href=format!("/tile/{}", tile_info.get().id)
                                 attr:class="px-6 py-2 border-2 border-white hover:bg-white hover:text-black transition-colors"
                             >
                                 "Manage tile"
@@ -169,7 +169,7 @@ fn Grid() -> impl IntoView {
                     .into_iter()
                     .map(|tile| {
                         view! {
-                            <Tile row=tile.row col=tile.col name=tile.name tile_size is_dragging />
+                            <Tile row=tile.row col=tile.col name=tile.id tile_size is_dragging />
                         }
                     })
                     .collect_view()}
@@ -182,7 +182,7 @@ fn Grid() -> impl IntoView {
 fn Tile(
     row: u32,
     col: u32,
-    name: String,
+    name: &'static str,
     tile_size: f64,
     is_dragging: RwSignal<bool>,
 ) -> impl IntoView {
@@ -199,12 +199,12 @@ fn Tile(
         use_context::<SelectedTile>().expect("failed to get SelectedTile from context");
 
     let name_clone = name.clone();
-    let is_selected = move || selected_tile.0.get().eq(&name_clone);
+    let is_selected = move || selected_tile.0.get().eq(name_clone);
 
     let on_click = move |e: MouseEvent| {
         if !is_dragging.get() && e.button() == 0 {
             e.prevent_default();
-            selected_tile.0.set(name.clone());
+            selected_tile.0.set(name);
         }
     };
 

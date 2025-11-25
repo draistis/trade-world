@@ -7,7 +7,7 @@ struct TabValue(RwSignal<String>);
 pub fn Tabs(default_value: &'static str, children: Children) -> impl IntoView {
     provide_context::<TabValue>(TabValue(RwSignal::new(default_value.to_string())));
 
-    view! { <div class="flex flex-col gap-4">{children()}</div> }
+    view! { <div class="w-full flex flex-col">{children()}</div> }
 }
 
 #[component]
@@ -44,7 +44,7 @@ pub fn TabsContent(value: &'static str, children: Children) -> impl IntoView {
     let is_visible = move || tab_value.0.get() == value;
 
     view! {
-        <div class="pt-4 p-2" class:hidden=move || !is_visible()>
+        <div class="p-2" class:hidden=move || !is_visible()>
             {children()}
         </div>
     }

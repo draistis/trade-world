@@ -71,7 +71,7 @@ pub fn AccordionTrigger(children: Children) -> impl IntoView {
 
     view! {
         <button
-            class="flex w-full items-center justify-between py-4 text-left font-medium transition-all hover:underline hover:cursor-pointer"
+            class="flex w-full items-center justify-between py-2 text-left font-medium transition-all hover:underline hover:cursor-pointer"
             on:click=on_click
         >
             {children()}
@@ -104,13 +104,14 @@ pub fn AccordionContent(children: Children) -> impl IntoView {
 
     let is_hidden = move || !ctx.is_open(value);
 
+    // Switch to <Show> for instant opening
     view! {
         <div
-            class="overflow-hidden transition-all duration-200"
+            class="overflow-hidden transition-all duration-200 mx-2"
             class:max-h-0=is_hidden
             class:max-h-96=move || !is_hidden()
         >
-            <div class="pb-4 pt-0 text-gray-400">{children()}</div>
+            <div class="pb-2 text-gray-200">{children()}</div>
         </div>
     }
 }
