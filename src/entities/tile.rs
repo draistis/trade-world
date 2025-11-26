@@ -2,6 +2,8 @@ use std::collections::HashMap;
 
 use leptos::prelude::*;
 
+use crate::entities::Inventory;
+
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Tile {
     pub id: &'static str,
@@ -31,6 +33,7 @@ impl Tile {
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct TileState {
+    pub inventory: RwSignal<Inventory>,
     pub total_land: RwSignal<u32>,
     pub empty_land: RwSignal<u32>,
     pub buildings: Buildings,
@@ -41,6 +44,7 @@ pub struct TileState {
 impl TileState {
     pub fn new() -> Self {
         Self {
+            inventory: RwSignal::new(Inventory::new()),
             total_land: RwSignal::new(500),
             empty_land: RwSignal::new(500),
             buildings: Buildings::new(),

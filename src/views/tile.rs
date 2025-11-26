@@ -1,6 +1,8 @@
 use crate::components::header::Header;
+use crate::components::InventoryContainer;
 use crate::entities::GameState;
 use crate::entities::Tile;
+use leptos::logging::log;
 use leptos::prelude::*;
 use leptos::Params;
 use leptos_router::hooks::use_params;
@@ -11,7 +13,7 @@ use crate::components::{
 };
 use crate::components::{Tabs, TabsContent, TabsList, TabsTrigger};
 
-#[derive(Params, PartialEq)]
+#[derive(Params, PartialEq, Clone)]
 pub struct TileParams {
     pub id: Option<String>,
 }
@@ -23,19 +25,23 @@ pub struct TileContext(Memo<Option<Tile>>);
 pub fn TilePage() -> impl IntoView {
     let game_state = use_context::<GameState>().expect("failed to get game state");
     let params = use_params::<TileParams>();
-    let tile_id = params
-        .read_untracked()
-        .as_ref()
-        .ok()
-        .and_then(|params| params.id.clone())
-        .unwrap_or_default();
+
+    let tile_id = move || params.get().unwrap().id.unwrap();
+
     let tile = Memo::new(move |_| {
         game_state
             .tiles
             .get()
             .iter()
-            .find(|tile| tile.id == tile_id)
+            .find(|tile| tile.id == tile_id())
             .cloned()
+    });
+    Effect::new(move || {
+        log!(
+            "tile_id {:?}\nitems {:?}",
+            tile_id(),
+            tile.get().unwrap().tile_state.inventory.get().items.get()
+        );
     });
 
     provide_context(TileContext(tile));
@@ -60,7 +66,17 @@ pub fn TilePage() -> impl IntoView {
                         <TabsContent value="workers">"workers tab content"</TabsContent>
                     </Tabs>
                 </div>
-                <div class="flex flex-1">"inventory and transport/market"</div>
+                <div class="flex flex-1">
+                    <div class="flex flex-col w-full h-full">
+                        <div class="flex h-1/2 border-b border-gray-500 overflow-hidden">
+                            {move || {
+                                let inventory = tile.get().unwrap().tile_state.inventory;
+                                view! { <InventoryContainer inventory=inventory /> }
+                            }}
+                        </div>
+                        <div class="flex">"bottom"</div>
+                    </div>
+                </div>
             </div>
         </div>
     }
@@ -73,15 +89,7 @@ pub fn OverviewTab() -> impl IntoView {
     view! {
         <div class="flex flex-col">
             <ul>
-                <li>
-                    {move || {
-                        if let Some(tile) = tile.get() {
-                            tile.tile_state.buildings.housing.cheap.get()
-                        } else {
-                            0
-                        }
-                    }}
-                </li>
+                <li>{move || { tile.get().unwrap().tile_state.buildings.housing.cheap.get() }}</li>
             </ul>
         </div>
     }
@@ -92,35 +100,50 @@ pub fn BuildingsTab() -> impl IntoView {
     let tile = use_context::<TileContext>().expect("tile context").0;
 
     let build_cheap = move |_| {
-        if let Some(tile) = tile.get() {
-            *tile.tile_state.buildings.housing.cheap.write() += 1;
-        }
+        *tile
+            .get()
+            .unwrap()
+            .tile_state
+            .buildings
+            .housing
+            .cheap
+            .write() += 1;
     };
     let build_standard = move |_| {
-        if let Some(tile) = tile.get() {
-            *tile.tile_state.buildings.housing.standard.write() += 1;
-        }
+        *tile
+            .get()
+            .unwrap()
+            .tile_state
+            .buildings
+            .housing
+            .standard
+            .write() += 1;
     };
     let build_fancy = move |_| {
-        if let Some(tile) = tile.get() {
-            *tile.tile_state.buildings.housing.standard.write() += 1;
-        }
+        *tile
+            .get()
+            .unwrap()
+            .tile_state
+            .buildings
+            .housing
+            .standard
+            .write() += 1;
     };
 
     let cheap_houses = move || {
-        if let Some(tile) = tile.get() {
-            tile.tile_state.buildings.housing.cheap.get();
-        }
+        tile.get().unwrap().tile_state.buildings.housing.cheap.get();
     };
     let standard_houses = move || {
-        if let Some(tile) = tile.get() {
-            tile.tile_state.buildings.housing.standard.get();
-        }
+        tile.get()
+            .unwrap()
+            .tile_state
+            .buildings
+            .housing
+            .standard
+            .get();
     };
     let fancy_houses = move || {
-        if let Some(tile) = tile.get() {
-            tile.tile_state.buildings.housing.fancy.get();
-        }
+        tile.get().unwrap().tile_state.buildings.housing.fancy.get();
     };
 
     view! {

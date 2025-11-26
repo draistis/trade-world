@@ -7,7 +7,7 @@ use leptos_router::{
     path, StaticSegment,
 };
 
-use crate::entities::{GameState, Tile};
+use crate::entities::{tile::TileState, GameState, Tile};
 use crate::views::*;
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
@@ -44,6 +44,7 @@ pub fn ProvideGameState() -> impl IntoView {
         is_owned: RwSignal::new(false),
         row: 0,
         col: 0,
+        tile_state: TileState::new(),
         ..Default::default()
     });
     tiles.push(Tile {
@@ -58,6 +59,7 @@ pub fn ProvideGameState() -> impl IntoView {
         is_owned: RwSignal::new(true),
         row: 0,
         col: 1,
+        tile_state: TileState::new(),
         ..Default::default()
     });
     tiles.push(Tile {
@@ -71,6 +73,7 @@ pub fn ProvideGameState() -> impl IntoView {
         is_owned: RwSignal::new(false),
         row: 1,
         col: 0,
+        tile_state: TileState::new(),
         ..Default::default()
     });
     tiles.push(Tile {
@@ -84,6 +87,7 @@ pub fn ProvideGameState() -> impl IntoView {
         is_owned: RwSignal::new(false),
         row: 1,
         col: 1,
+        tile_state: TileState::new(),
         ..Default::default()
     });
 
