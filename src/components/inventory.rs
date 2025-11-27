@@ -1,49 +1,27 @@
-use std::collections::HashMap;
-
-use leptos::ev::MouseEvent;
-use leptos::logging::log;
+use leptos::html::Div;
 use leptos::prelude::*;
+use leptos_use::core::Position;
+use leptos_use::{use_draggable_with_options, UseDraggableOptions, UseDraggableReturn};
 
+use crate::entities::Inventory;
 use crate::entities::ITEMS;
-use crate::entities::{Inventory, Item};
 
 #[derive(Copy, Clone)]
-struct DragState {
-    dragging: RwSignal<Option<DragInfo>>,
-    mouse_pos: RwSignal<(i32, i32)>,
+pub struct DragState {
+    pub dragging: RwSignal<Option<DragInfo>>,
+    pub mouse_pos: RwSignal<(i32, i32)>,
 }
 
 #[derive(Clone)]
-struct DragInfo {
-    item_id: &'static str,
-    quantity: u64,
-    source_inventory: String,
+pub struct DragInfo {
+    pub item_id: &'static str,
+    pub quantity: u64,
+    pub source_inventory: String,
 }
 
 #[component]
 pub fn InventoryContainer(inventory: RwSignal<Inventory>) -> impl IntoView {
-    let drag_state = DragState {
-        dragging: RwSignal::new(None),
-        mouse_pos: RwSignal::new((0, 0)),
-    };
-    let start_drag = move |_| {
-        drag_state.dragging.set(Some(DragInfo {
-            item_id: "123",
-            quantity: 12,
-            source_inventory: inventory.get().id,
-        }))
-    };
-    let on_mouse_move = move |mouse_event: MouseEvent| {
-        if drag_state.dragging.get().is_some() {
-            drag_state.mouse_pos.update(|pos| {
-                pos.0 = mouse_event.screen_x();
-                pos.1 = mouse_event.screen_y()
-            })
-        }
-    };
-    let end_drag = move |_| {
-        drag_state.dragging.set(None);
-    };
+    let drag_state = use_context::<DragState>().expect("DragState ctx");
 
     view! {
         <div class="flex p-2">
@@ -51,25 +29,72 @@ pub fn InventoryContainer(inventory: RwSignal<Inventory>) -> impl IntoView {
                 each=move || inventory.get().items.get()
                 key=|item| item.0
                 children=move |item| {
-                    let item = ITEMS
-                        .iter()
-                        .find(|i| i.id == item.0)
-                        .expect("couldn't find item in ITEMS list");
-                    view! {
-                        <div
-                            class=format!(
-                                "p-2 m-1 flex items-center justify-center font-bold text-lg h-14 w-14 text-shadow-lg {}",
-                                item.color(),
-                            )
-                            on:mousedown=start_drag
-                            on:mousemove=on_mouse_move
-                            on:mouseup=end_drag
-                        >
-                            <span>{item.id}</span>
-                        </div>
-                    }
+                    let item_id = item.0;
+                    let quantity = item.1;
+                    view! { <DraggableItem item_id quantity inventory /> }
                 }
             />
+        </div>
+    }
+}
+
+// Items teleport to 0,0 or last drop-off location on click(drag start)
+#[component]
+pub fn DraggableItem(
+    item_id: &'static str,
+    quantity: u64,
+    inventory: RwSignal<Inventory>,
+) -> impl IntoView {
+    let drag_state = use_context::<DragState>().expect("DragState ctx");
+    let element = NodeRef::<Div>::new();
+    let item = ITEMS
+        .iter()
+        .find(|i| i.id == item_id)
+        .expect("failed to find item id in ITEMS list");
+
+    let UseDraggableReturn {
+        position,
+        is_dragging,
+        ..
+    } = use_draggable_with_options(
+        element,
+        UseDraggableOptions::default()
+            .on_start(move |_| {
+                drag_state.dragging.set(Some(DragInfo {
+                    item_id,
+                    quantity,
+                    source_inventory: inventory.get().id,
+                }));
+                true
+            })
+            .on_end(move |_| {
+                drag_state.dragging.set(None);
+            }),
+    );
+
+    view! {
+        <div
+            node_ref=element
+            class=format!(
+                "relative p-2 m-1 flex items-center justify-center font-bold text-lg select-none h-16 w-16 text-shadow-lg {}",
+                item.color(),
+            )
+            style=move || {
+                if is_dragging.get() {
+                    format!(
+                        "position: fixed; left: {}px; top: {}px; cursor: grabbing;",
+                        position.get().x,
+                        position.get().y,
+                    )
+                } else {
+                    String::new()
+                }
+            }
+        >
+            <span>{item.id}</span>
+            <div class="absolute bottom-0 right-0 flex items-center justify-center px-1 bg-black/80 text-white text-xs font-bold rounded-tl-lg">
+                {quantity}
+            </div>
         </div>
     }
 }

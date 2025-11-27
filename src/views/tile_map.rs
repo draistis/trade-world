@@ -198,8 +198,8 @@ fn Tile(
     let selected_tile =
         use_context::<SelectedTile>().expect("failed to get SelectedTile from context");
 
-    let name_clone = name.clone();
-    let is_selected = move || selected_tile.0.get().eq(name_clone);
+    // let name_clone = name.clone();
+    let is_selected = move || selected_tile.0.get().eq(name);
 
     let on_click = move |e: MouseEvent| {
         if !is_dragging.get() && e.button() == 0 {

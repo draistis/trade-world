@@ -8,6 +8,7 @@ use leptos::Params;
 use leptos_router::hooks::use_params;
 use leptos_router::params::Params;
 
+use crate::components::inventory::DragState;
 use crate::components::{
     Accordion, AccordionContent, AccordionItem, AccordionTrigger, AccordionType,
 };
@@ -25,6 +26,10 @@ pub struct TileContext(Memo<Option<Tile>>);
 pub fn TilePage() -> impl IntoView {
     let game_state = use_context::<GameState>().expect("failed to get game state");
     let params = use_params::<TileParams>();
+    provide_context(DragState {
+        dragging: RwSignal::new(None),
+        mouse_pos: RwSignal::new((0, 0)),
+    });
 
     let tile_id = move || params.get().unwrap().id.unwrap();
 
