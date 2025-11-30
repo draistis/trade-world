@@ -30,4 +30,8 @@
     "--rustfmt"
   ],
   "editor.formatOnSave": true,
+  "tailwindCSS.experimental.classRegex": [
+    ["class\\s*=\\s*format!\\s*\\(\\s*r?#?\"([^\"]*#?)", "([a-zA-Z0-9\\-:]+)"],
+    ["class\\s*:\\([^\"]*)", "([a-zA-Z0-9\\-:]+)"],
+  ]
 }

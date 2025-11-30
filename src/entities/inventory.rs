@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use leptos::prelude::*;
 use uuid::Uuid;
 
@@ -28,7 +26,7 @@ impl Item<'_> {
 pub struct Inventory {
     pub id: String,
     pub name: String,
-    pub items: RwSignal<HashMap<&'static str, u64>>,
+    pub items: RwSignal<Vec<(&'static str, u64)>>,
     pub max_volume: f64,
     pub max_weight: f64,
     pub weight: RwSignal<f64>,
@@ -40,7 +38,29 @@ impl Inventory {
         Self {
             id: Uuid::new_v4().to_string(),
             name: "".to_string(),
-            items: RwSignal::new(HashMap::from([("GRV", 55), ("BRD", 120), ("LOG", 12)])),
+            items: RwSignal::new(Vec::from([("GRV", 55), ("BRD", 120), ("LOG", 12)])),
+            max_volume: 500.0,
+            max_weight: 500.0,
+            weight: RwSignal::new(0.0),
+            volume: RwSignal::new(0.0),
+        }
+    }
+    pub fn empty() -> Self {
+        Self {
+            id: Uuid::new_v4().to_string(),
+            name: "".to_string(),
+            items: RwSignal::new(Vec::new()),
+            max_volume: 500.0,
+            max_weight: 500.0,
+            weight: RwSignal::new(0.0),
+            volume: RwSignal::new(0.0),
+        }
+    }
+    pub fn one_item() -> Self {
+        Self {
+            id: Uuid::new_v4().to_string(),
+            name: "".to_string(),
+            items: RwSignal::new(Vec::from([("GRV", 102)])),
             max_volume: 500.0,
             max_weight: 500.0,
             weight: RwSignal::new(0.0),

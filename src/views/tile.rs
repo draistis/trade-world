@@ -1,8 +1,9 @@
 use crate::components::header::Header;
+use crate::components::inventory::DraggableItemOverlay;
 use crate::components::InventoryContainer;
 use crate::entities::GameState;
+use crate::entities::Inventory;
 use crate::entities::Tile;
-use leptos::logging::log;
 use leptos::prelude::*;
 use leptos::Params;
 use leptos_router::hooks::use_params;
@@ -26,11 +27,6 @@ pub struct TileContext(Memo<Option<Tile>>);
 pub fn TilePage() -> impl IntoView {
     let game_state = use_context::<GameState>().expect("failed to get game state");
     let params = use_params::<TileParams>();
-    provide_context(DragState {
-        dragging: RwSignal::new(None),
-        mouse_pos: RwSignal::new((0, 0)),
-    });
-
     let tile_id = move || params.get().unwrap().id.unwrap();
 
     let tile = Memo::new(move |_| {
@@ -41,19 +37,17 @@ pub fn TilePage() -> impl IntoView {
             .find(|tile| tile.id == tile_id())
             .cloned()
     });
-    Effect::new(move || {
-        log!(
-            "tile_id {:?}\nitems {:?}",
-            tile_id(),
-            tile.get().unwrap().tile_state.inventory.get().items.get()
-        );
-    });
 
     provide_context(TileContext(tile));
+    provide_context(DragState {
+        dragging: RwSignal::new(None),
+        mouse_pos: RwSignal::new((0, 0)),
+    });
 
     view! {
         <div class="flex flex-col h-screen overflow-hidden">
             <Header />
+            <DraggableItemOverlay />
             <div class="flex flex-1">
                 <div class="flex border-r border-gray-500 w-1/2 lg:w-1/3">
                     <Tabs default_value="overview">
@@ -73,13 +67,24 @@ pub fn TilePage() -> impl IntoView {
                 </div>
                 <div class="flex flex-1">
                     <div class="flex flex-col w-full h-full">
-                        <div class="flex h-1/2 border-b border-gray-500 overflow-hidden">
+                        <div class="flex h-1/3 border-b border-gray-500 overflow-hidden">
                             {move || {
                                 let inventory = tile.get().unwrap().tile_state.inventory;
                                 view! { <InventoryContainer inventory=inventory /> }
                             }}
                         </div>
-                        <div class="flex">"bottom"</div>
+                        <div class="flex h-1/3 border-b border-gray-500 overflow-hidden">
+                            {move || {
+                                let inventory = RwSignal::new(Inventory::empty());
+                                view! { <InventoryContainer inventory=inventory /> }
+                            }}
+                        </div>
+                        <div class="flex overflow-hidden h-1/3">
+                            {move || {
+                                let inventory = RwSignal::new(Inventory::one_item());
+                                view! { <InventoryContainer inventory=inventory /> }
+                            }}
+                        </div>
                     </div>
                 </div>
             </div>
