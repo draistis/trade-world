@@ -26,6 +26,12 @@ pub fn InventoryContainer(inventory: RwSignal<Inventory>) -> impl IntoView {
     let is_hovered = RwSignal::new(false);
     let inv_id = inventory.get_untracked().id.clone();
 
+    let stored_items = Memo::new(move |_| {
+        let mut items: Vec<_> = inventory.get().items.get().into_iter().collect();
+        items.sort_by(|a, b| a.0.cmp(&b.0));
+        items
+    });
+
     let show_overlay = move || {
         is_hovered.get()
             && drag_state
@@ -47,21 +53,15 @@ pub fn InventoryContainer(inventory: RwSignal<Inventory>) -> impl IntoView {
 
     view! {
         <div
-            class="relative flex p-2 w-full h-full flex-col"
+            class="flex p-2 w-full h-full flex-col"
             on:mouseenter=move |_| is_hovered.set(true)
             on:mouseleave=move |_| is_hovered.set(false)
         >
-            <div class="w-full h-fit">
-                <span class="text-sm text-gray-300">{inventory.get_untracked().id.clone()}</span>
-            </div>
-            <div class="flex">
-                <Show when=move || show_overlay()>
-                    <div class="absolute z-10 inset-0 bg-white/30 flex items-center justify-center text-lg pointer-events-none">
-                        "Transfer items"
-                    </div>
-                </Show>
+            <InventoryCapacityProgress inventory />
+            <div class="relative flex w-full h-full">
+                <InventoryTransferOverlay show_overlay />
                 <For
-                    each=move || inventory.get().items.get()
+                    each=move || stored_items.get()
                     key=|item| item.0
                     children=move |item| {
                         let item_id = item.0;
@@ -147,6 +147,52 @@ pub fn DraggableItemOverlay() -> impl IntoView {
                     </div>
                 }
             }}
+        </Show>
+    }
+}
+
+#[component]
+fn InventoryCapacityProgress(inventory: RwSignal<Inventory>) -> impl IntoView {
+    view! {
+        <div class="flex w-full h-fit items-center gap-2">
+            <span class="text-sm text-gray-300">{inventory.get_untracked().id.clone()}</span>
+            {move || {
+                let max_weight = inventory.get().max_weight;
+                let max_volume = inventory.get().max_volume;
+                let weight = inventory.get().weight.get();
+                let volume = inventory.get().volume.get();
+
+                view! {
+                    <div class="flex items-center gap-2">
+                        <progress
+                            class="flex-1 h-3 w-12 bg-[#151515] border border-gray-300 [&::-webkit-progress-value]:bg-amber-300 [&::-moz-progress-bar]:bg-amber-300"
+                            max=max_weight
+                            value=weight
+                        />
+                        <span>{format!("{:.1} / {}t", weight, max_weight)}</span>
+                        <progress
+                            class="flex-1 h-3 w-12 bg-[#151515] border border-gray-300 [&::-webkit-progress-value]:bg-amber-300 [&::-moz-progress-bar]:bg-amber-300"
+                            max=max_volume
+                            value=volume
+                        />
+                        <span>{format!("{:.1} / {}m", volume, max_volume)}<sup>3</sup></span>
+                    </div>
+                }
+            }}
+        </div>
+    }
+}
+
+#[component]
+fn InventoryTransferOverlay<T>(show_overlay: T) -> impl IntoView
+where
+    T: Fn() -> bool + std::marker::Sync + std::marker::Send + 'static,
+{
+    view! {
+        <Show when=show_overlay>
+            <div class="absolute inset-0 z-10 bg-white/30 flex items-center justify-center text-lg pointer-events-none">
+                "Transfer items"
+            </div>
         </Show>
     }
 }

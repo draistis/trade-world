@@ -38,11 +38,11 @@ impl Inventory {
         Self {
             id: Uuid::new_v4().to_string(),
             name: "".to_string(),
-            items: RwSignal::new(Vec::from([("GRV", 55), ("BRD", 120), ("LOG", 12)])),
+            items: RwSignal::new(Vec::from([("GRV", 100), ("BRD", 120), ("LOG", 12)])),
             max_volume: 500.0,
             max_weight: 500.0,
-            weight: RwSignal::new(0.0),
-            volume: RwSignal::new(0.0),
+            weight: RwSignal::new(332.0),
+            volume: RwSignal::new(206.0),
         }
     }
     pub fn empty() -> Self {
@@ -60,11 +60,11 @@ impl Inventory {
         Self {
             id: Uuid::new_v4().to_string(),
             name: "".to_string(),
-            items: RwSignal::new(Vec::from([("GRV", 102)])),
+            items: RwSignal::new(Vec::from([("CHR", 60)])),
             max_volume: 500.0,
             max_weight: 500.0,
-            weight: RwSignal::new(0.0),
-            volume: RwSignal::new(0.0),
+            weight: RwSignal::new(54.0),
+            volume: RwSignal::new(180.0),
         }
     }
 }
