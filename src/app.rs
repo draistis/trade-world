@@ -7,8 +7,11 @@ use leptos_router::{
     path, StaticSegment,
 };
 
-use crate::entities::{tile::TileState, GameState, Tile};
 use crate::views::*;
+use crate::{
+    components::inventory::DragState,
+    entities::{tile::TileState, GameState, Tile},
+};
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
@@ -94,6 +97,10 @@ pub fn ProvideGameState() -> impl IntoView {
     game_state.tiles = RwSignal::new(tiles);
 
     provide_context(game_state);
+    provide_context(DragState {
+        dragging: RwSignal::new(None),
+        mouse_pos: RwSignal::new((0, 0)),
+    });
 }
 
 #[component]

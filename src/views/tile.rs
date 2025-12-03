@@ -4,6 +4,9 @@ use crate::components::InventoryContainer;
 use crate::entities::GameState;
 use crate::entities::Inventory;
 use crate::entities::Tile;
+use leptos::ev::mousemove;
+use leptos::ev::mouseup;
+use leptos::ev::MouseEvent;
 use leptos::prelude::*;
 use leptos::Params;
 use leptos_router::hooks::use_params;
@@ -26,8 +29,12 @@ pub struct TileContext(Memo<Option<Tile>>);
 #[component]
 pub fn TilePage() -> impl IntoView {
     let game_state = use_context::<GameState>().expect("failed to get game state");
+    let drag_state = use_context::<DragState>().expect("context");
     let params = use_params::<TileParams>();
     let tile_id = move || params.get().unwrap().id.unwrap();
+
+    let inv2 = RwSignal::new(Inventory::empty());
+    let inv3 = RwSignal::new(Inventory::one_item());
 
     let tile = Memo::new(move |_| {
         game_state
@@ -39,9 +46,24 @@ pub fn TilePage() -> impl IntoView {
     });
 
     provide_context(TileContext(tile));
-    provide_context(DragState {
-        dragging: RwSignal::new(None),
-        mouse_pos: RwSignal::new((0, 0)),
+
+    window_event_listener(mousemove, move |e: MouseEvent| {
+        if drag_state.dragging.get().is_some() {
+            drag_state.mouse_pos.set((e.client_x(), e.client_y()));
+        }
+    });
+
+    window_event_listener(mouseup, move |e: MouseEvent| {
+        if let Some(drag_info) = drag_state.dragging.get() {
+            if let Some(destination) = drag_info.destination {
+                drag_info
+                    .source
+                    .update(|inv| inv.remove_item(drag_info.item_id, 1));
+
+                destination.update(|inv| inv.add_item(drag_info.item_id, 1));
+            }
+        }
+        drag_state.dragging.set(None);
     });
 
     view! {
@@ -74,16 +96,10 @@ pub fn TilePage() -> impl IntoView {
                             }}
                         </div>
                         <div class="flex h-1/3 border-b border-gray-500 overflow-hidden">
-                            {move || {
-                                let inventory = RwSignal::new(Inventory::empty());
-                                view! { <InventoryContainer inventory=inventory /> }
-                            }}
+                            <InventoryContainer inventory=inv2 />
                         </div>
                         <div class="flex overflow-hidden h-1/3">
-                            {move || {
-                                let inventory = RwSignal::new(Inventory::one_item());
-                                view! { <InventoryContainer inventory=inventory /> }
-                            }}
+                            <InventoryContainer inventory=inv3 />
                         </div>
                     </div>
                 </div>

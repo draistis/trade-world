@@ -1,5 +1,3 @@
-use leptos::ev::mousemove;
-use leptos::ev::mouseup;
 use leptos::ev::MouseEvent;
 use leptos::prelude::*;
 
@@ -16,7 +14,8 @@ pub struct DragState {
 pub struct DragInfo {
     pub item_id: &'static str,
     pub quantity: u64,
-    pub source_inventory: String,
+    pub source: RwSignal<Inventory>,
+    pub destination: Option<RwSignal<Inventory>>,
     pub offset: (i32, i32),
 }
 
@@ -37,19 +36,9 @@ pub fn InventoryContainer(inventory: RwSignal<Inventory>) -> impl IntoView {
             && drag_state
                 .dragging
                 .get()
-                .map(|info| info.source_inventory != inv_id)
+                .map(|info| info.source.get().id != inv_id)
                 .unwrap_or(false)
     };
-
-    window_event_listener(mousemove, move |e: MouseEvent| {
-        if drag_state.dragging.get().is_some() {
-            drag_state.mouse_pos.set((e.client_x(), e.client_y()));
-        }
-    });
-
-    window_event_listener(mouseup, move |e: MouseEvent| {
-        drag_state.dragging.set(None);
-    });
 
     view! {
         <div
@@ -59,7 +48,7 @@ pub fn InventoryContainer(inventory: RwSignal<Inventory>) -> impl IntoView {
         >
             <InventoryCapacityProgress inventory />
             <div class="relative flex w-full h-full">
-                <InventoryTransferOverlay show_overlay />
+                <InventoryTransferOverlay show_overlay destination_inventory=inventory />
                 <For
                     each=move || stored_items.get()
                     key=|item| item.0
@@ -81,7 +70,6 @@ pub fn DraggableItem(
     inventory: RwSignal<Inventory>,
 ) -> impl IntoView {
     let drag_state = use_context::<DragState>().expect("DragState ctx");
-    let inv_id = inventory.get_untracked().id.clone();
     let item = ITEMS
         .iter()
         .find(|i| i.id == item_id)
@@ -92,10 +80,21 @@ pub fn DraggableItem(
         drag_state.dragging.set(Some(DragInfo {
             item_id,
             quantity,
-            source_inventory: inv_id.clone(),
+            source: inventory,
+            destination: None,
             offset: (e.offset_x(), e.offset_y()),
         }));
         drag_state.mouse_pos.set((e.client_x(), e.client_y()));
+    };
+    let item_qty = move || {
+        inventory
+            .get()
+            .items
+            .get()
+            .iter()
+            .find(|i| i.0 == item_id)
+            .unwrap()
+            .1
     };
 
     view! {
@@ -108,7 +107,7 @@ pub fn DraggableItem(
         >
             <span class="pointer-events-none">{item.id}</span>
             <div class="absolute bottom-0 right-0 flex items-center justify-center px-1 bg-black/80 text-white text-xs font-bold pointer-events-none rounded-tl-lg">
-                {quantity}
+                {item_qty}
             </div>
         </div>
     }
@@ -130,6 +129,16 @@ pub fn DraggableItemOverlay() -> impl IntoView {
                     .expect("item missing from ITEMS");
                 let (x, y) = drag_state.mouse_pos.get();
                 let (off_x, off_y) = info.offset;
+                let item_qty = move || {
+                    info.source
+                        .get()
+                        .items
+                        .get()
+                        .iter()
+                        .find(|i| i.0 == info.item_id)
+                        .unwrap_or(&("NAI", 0))
+                        .1
+                };
 
                 view! {
                     <div
@@ -142,7 +151,7 @@ pub fn DraggableItemOverlay() -> impl IntoView {
                     >
                         <span>{item.id}</span>
                         <div class="absolute bottom-0 right-0 flex items-center justify-center px-1 bg-black/80 text-white text-xs font-bold rounded-tl-lg">
-                            {info.quantity}
+                            {item_qty}
                         </div>
                     </div>
                 }
@@ -155,7 +164,7 @@ pub fn DraggableItemOverlay() -> impl IntoView {
 fn InventoryCapacityProgress(inventory: RwSignal<Inventory>) -> impl IntoView {
     view! {
         <div class="flex w-full h-fit items-center gap-2">
-            <span class="text-sm text-gray-300">{inventory.get_untracked().id.clone()}</span>
+            <span class="text-sm text-gray-300">{move || inventory.get().id}</span>
             {move || {
                 let max_weight = inventory.get().max_weight;
                 let max_volume = inventory.get().max_volume;
@@ -183,15 +192,72 @@ fn InventoryCapacityProgress(inventory: RwSignal<Inventory>) -> impl IntoView {
     }
 }
 
+#[derive(Copy, Clone, Debug, PartialEq)]
+enum TransferType {
+    ONE,
+    HUNDRED,
+    ALL,
+    MAX,
+}
+
 #[component]
-fn InventoryTransferOverlay<T>(show_overlay: T) -> impl IntoView
+fn InventoryTransferOverlay<T>(
+    show_overlay: T,
+    destination_inventory: RwSignal<Inventory>,
+) -> impl IntoView
 where
     T: Fn() -> bool + std::marker::Sync + std::marker::Send + 'static,
 {
+    let drag_state = use_context::<DragState>().expect("context");
+
+    let qty_can_transfer = 0;
+
+    // let on_enter = move |_| {
+    //     transfer_type.set(Some(transfer_type));
+    //     drag_state
+    //         .dragging
+    //         .update(|info| info.destination.set(inventory));
+    // };
+
     view! {
         <Show when=show_overlay>
-            <div class="absolute inset-0 z-10 bg-white/30 flex items-center justify-center text-lg pointer-events-none">
-                "Transfer items"
+            <div class="absolute flex inset-0 z-10 bg-white/30 flex text-white text-5xl">
+                <div
+                    on:mouseenter=move |_| {
+                        drag_state
+                            .dragging
+                            .update(|drag_info_opt| {
+                                if let Some(drag_info) = drag_info_opt {
+                                    *drag_info = DragInfo {
+                                        destination: Some(destination_inventory),
+                                        quantity: 1,
+                                        ..drag_info.clone()
+                                    };
+                                }
+                            });
+                    }
+                    on:mouseleave=move |_| {
+                        drag_state
+                            .dragging
+                            .update(|drag_info_opt| {
+                                if let Some(drag_info) = drag_info_opt {
+                                    *drag_info = DragInfo {
+                                        destination: None,
+                                        ..drag_info.clone()
+                                    };
+                                }
+                            });
+                    }
+                    class="w-1/3 flex h-full items-center justify-center border-r border-gray-300 hover:text-amber-300"
+                >
+                    <span>"1"</span>
+                </div>
+                <div class="w-1/3 flex h-full items-center justify-center border-r border-gray-300 hover:text-amber-300">
+                    <span>"ALL"</span>
+                </div>
+                <div class="w-1/3 flex h-full items-center justify-center border-r border-gray-300 hover:text-amber-300">
+                    <span>"MAX"</span>
+                </div>
             </div>
         </Show>
     }
