@@ -6,8 +6,8 @@ pub struct Item<'a> {
     pub id: &'a str,
     pub name: &'a str,
     pub category: &'a str,
-    pub weight: f64,
-    pub volume: f64,
+    pub weight: u64,
+    pub volume: u64,
 }
 
 impl Item<'_> {
@@ -27,10 +27,10 @@ pub struct Inventory {
     pub id: String,
     pub name: String,
     pub items: RwSignal<Vec<(&'static str, u64)>>,
-    pub max_volume: f64,
-    pub max_weight: f64,
-    pub weight: RwSignal<f64>,
-    pub volume: RwSignal<f64>,
+    pub max_volume: RwSignal<u64>,
+    pub max_weight: RwSignal<u64>,
+    pub weight: RwSignal<u64>,
+    pub volume: RwSignal<u64>,
 }
 
 impl Inventory {
@@ -39,10 +39,10 @@ impl Inventory {
             id: Uuid::new_v4().to_string(),
             name: "".to_string(),
             items: RwSignal::new(Vec::from([("GRV", 100), ("BRD", 120), ("LOG", 12)])),
-            max_volume: 500.0,
-            max_weight: 500.0,
-            weight: RwSignal::new(332.0),
-            volume: RwSignal::new(206.0),
+            max_volume: RwSignal::new(500_000),
+            max_weight: RwSignal::new(500_000),
+            weight: RwSignal::new(332_000),
+            volume: RwSignal::new(206_000),
         }
     }
     pub fn empty() -> Self {
@@ -50,10 +50,10 @@ impl Inventory {
             id: Uuid::new_v4().to_string(),
             name: "".to_string(),
             items: RwSignal::new(Vec::from([("DBG", 50)])),
-            max_volume: 500.0,
-            max_weight: 500.0,
-            weight: RwSignal::new(255.0),
-            volume: RwSignal::new(405.0),
+            max_volume: RwSignal::new(500_000),
+            max_weight: RwSignal::new(500_000),
+            weight: RwSignal::new(255_000),
+            volume: RwSignal::new(405_000),
         }
     }
     pub fn one_item() -> Self {
@@ -61,17 +61,17 @@ impl Inventory {
             id: Uuid::new_v4().to_string(),
             name: "".to_string(),
             items: RwSignal::new(Vec::from([("CHR", 60)])),
-            max_volume: 500.0,
-            max_weight: 500.0,
-            weight: RwSignal::new(54.0),
-            volume: RwSignal::new(180.0),
+            max_volume: RwSignal::new(500_000),
+            max_weight: RwSignal::new(500_000),
+            weight: RwSignal::new(54_000),
+            volume: RwSignal::new(180_000),
         }
     }
-    pub fn empty_weight(&self) -> f64 {
-        self.max_weight - self.weight.get()
+    pub fn empty_weight(&self) -> u64 {
+        self.max_weight.get() - self.weight.get()
     }
-    pub fn empty_volume(&self) -> f64 {
-        self.max_volume - self.volume.get()
+    pub fn empty_volume(&self) -> u64 {
+        self.max_volume.get() - self.volume.get()
     }
     pub fn fits_max_items(&self, item_id: &'static str) -> u64 {
         let item = ITEMS
@@ -80,8 +80,8 @@ impl Inventory {
             .expect("item not in ITEMS list");
 
         u64::min(
-            (self.empty_volume() / item.volume).floor() as u64,
-            (self.empty_weight() / item.weight).floor() as u64,
+            self.empty_volume() / item.volume,
+            self.empty_weight() / item.weight,
         )
     }
     pub fn add_item(&mut self, item_id: &'static str, quantity: u64) {
@@ -102,8 +102,8 @@ impl Inventory {
                 }
             });
 
-        self.volume.update(|v| *v += item.volume * moved_qty as f64);
-        self.weight.update(|w| *w += item.weight * moved_qty as f64);
+        self.volume.update(|v| *v += item.volume * moved_qty);
+        self.weight.update(|w| *w += item.weight * moved_qty);
     }
     pub fn remove_item(&mut self, item_id: &'static str, quantity: u64) {
         let item = ITEMS
@@ -123,8 +123,9 @@ impl Inventory {
                 panic!("Something went wrong when removing items from inventory...");
             }
         });
-        self.volume.update(|v| *v -= item.volume * quantity as f64);
-        self.weight.update(|w| *w -= item.weight * quantity as f64);
+
+        self.volume.update(|v| *v -= item.volume * quantity);
+        self.weight.update(|w| *w -= item.weight * quantity);
     }
 }
 
@@ -133,35 +134,35 @@ pub const ITEMS: &[Item] = &[
         id: "LOG",
         name: "Logs",
         category: "Raw Materials",
-        weight: 1.0,
-        volume: 1.0,
+        weight: 1_000,
+        volume: 1_000,
     },
     Item {
         id: "GRV",
         name: "Gravel",
         category: "Raw Materials",
-        weight: 2.0,
-        volume: 1.5,
+        weight: 2_000,
+        volume: 1_500,
     },
     Item {
         id: "BRD",
         name: "Boards",
         category: "Processed Materials",
-        weight: 1.0,
-        volume: 1.2,
+        weight: 1_000,
+        volume: 1_200,
     },
     Item {
         id: "CHR",
         name: "Chair",
         category: "Carpentry Products",
-        weight: 0.9,
-        volume: 3.0,
+        weight: 900,
+        volume: 3_000,
     },
     Item {
         id: "DBG",
         name: "Debug",
         category: "Backrooms",
-        weight: 5.1,
-        volume: 8.1,
+        weight: 5_100,
+        volume: 8_100,
     },
 ];

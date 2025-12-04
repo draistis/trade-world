@@ -167,8 +167,8 @@ fn InventoryCapacityProgress(inventory: RwSignal<Inventory>) -> impl IntoView {
         <div class="flex w-full h-fit items-center gap-2">
             <span class="text-sm text-gray-300">{move || inventory.get().id}</span>
             {move || {
-                let max_weight = inventory.get().max_weight;
-                let max_volume = inventory.get().max_volume;
+                let max_weight = inventory.get().max_weight.get();
+                let max_volume = inventory.get().max_volume.get();
                 let weight = inventory.get().weight.get();
                 let volume = inventory.get().volume.get();
 
@@ -179,13 +179,18 @@ fn InventoryCapacityProgress(inventory: RwSignal<Inventory>) -> impl IntoView {
                             max=max_weight
                             value=weight
                         />
-                        <span>{format!("{} / {}t", weight, max_weight)}</span>
+                        <span>
+                            {format!("{:.1} / {}t", weight as f64 / 1000.0, max_weight / 1000)}
+                        </span>
                         <progress
                             class="flex-1 h-3 w-12 bg-[#151515] border border-gray-300 [&::-webkit-progress-value]:bg-amber-300 [&::-moz-progress-bar]:bg-amber-300"
                             max=max_volume
                             value=volume
                         />
-                        <span>{format!("{:.1} / {}m", volume, max_volume)}<sup>3</sup></span>
+                        <span>
+                            {format!("{:.1} / {}m", volume as f64 / 1000.0, max_volume / 1000)}
+                            <sup>3</sup>
+                        </span>
                     </div>
                 }
             }}

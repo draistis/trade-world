@@ -89,16 +89,16 @@ pub fn TilePage() -> impl IntoView {
                 </div>
                 <div class="flex flex-1">
                     <div class="flex flex-col w-full h-full">
-                        <div class="flex h-1/3 border-b border-gray-500 overflow-hidden">
+                        <div class="flex flex-1 border-b border-gray-500 overflow-hidden">
                             {move || {
                                 let inventory = tile.get().unwrap().tile_state.inventory;
                                 view! { <InventoryContainer inventory=inventory /> }
                             }}
                         </div>
-                        <div class="flex h-1/3 border-b border-gray-500 overflow-hidden">
+                        <div class="flex flex-1 border-b border-gray-500 overflow-hidden">
                             <InventoryContainer inventory=inv2 />
                         </div>
-                        <div class="flex overflow-hidden h-1/3">
+                        <div class="flex flex-1 overflow-hidden h-1/3">
                             <InventoryContainer inventory=inv3 />
                         </div>
                     </div>
