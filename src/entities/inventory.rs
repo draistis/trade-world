@@ -73,17 +73,26 @@ impl Inventory {
     pub fn empty_volume(&self) -> f64 {
         self.max_volume - self.volume.get()
     }
+    pub fn fits_max_items(&self, item_id: &'static str) -> u64 {
+        let item = ITEMS
+            .iter()
+            .find(|i| i.id == item_id)
+            .expect("item not in ITEMS list");
+
+        u64::min(
+            (self.empty_volume() / item.volume).floor() as u64,
+            (self.empty_weight() / item.weight).floor() as u64,
+        )
+    }
     pub fn add_item(&mut self, item_id: &'static str, quantity: u64) {
         let item = ITEMS
             .iter()
             .find(|i| i.id == item_id)
             .expect("item not in ITEMS list");
 
-        let max_qty_fits = u64::min(
-            (self.empty_volume() / item.volume).floor() as u64,
-            (self.empty_weight() / item.weight).floor() as u64,
-        );
+        let max_qty_fits = self.fits_max_items(item_id);
         let moved_qty = u64::min(max_qty_fits, quantity);
+
         self.items
             .update(move |items: &mut Vec<(&'static str, u64)>| {
                 if let Some((_id, qty)) = items.iter_mut().find(|i| i.0 == item_id) {
@@ -104,7 +113,7 @@ impl Inventory {
 
         self.items.update(|items| {
             if let Some((_id, qty)) = items.iter_mut().find(|i| i.0 == item_id) {
-                *qty -= quantity;
+                *qty = qty.saturating_sub(quantity);
                 if *qty <= 0 {
                     if let Some(pos) = items.iter().position(|i| i.0 == item_id) {
                         items.remove(pos);

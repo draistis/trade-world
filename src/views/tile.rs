@@ -53,14 +53,14 @@ pub fn TilePage() -> impl IntoView {
         }
     });
 
-    window_event_listener(mouseup, move |e: MouseEvent| {
+    window_event_listener(mouseup, move |_e: MouseEvent| {
         if let Some(drag_info) = drag_state.dragging.get() {
             if let Some(destination) = drag_info.destination {
                 drag_info
                     .source
-                    .update(|inv| inv.remove_item(drag_info.item_id, 1));
+                    .update(|inv| inv.remove_item(drag_info.item_id, drag_info.to_transfer));
 
-                destination.update(|inv| inv.add_item(drag_info.item_id, 1));
+                destination.update(|inv| inv.add_item(drag_info.item_id, drag_info.to_transfer));
             }
         }
         drag_state.dragging.set(None);

@@ -16,6 +16,7 @@ pub struct DragInfo {
     pub quantity: u64,
     pub source: RwSignal<Inventory>,
     pub destination: Option<RwSignal<Inventory>>,
+    pub to_transfer: u64,
     pub offset: (i32, i32),
 }
 
@@ -41,13 +42,13 @@ pub fn InventoryContainer(inventory: RwSignal<Inventory>) -> impl IntoView {
     };
 
     view! {
-        <div
-            class="flex p-2 w-full h-full flex-col"
-            on:mouseenter=move |_| is_hovered.set(true)
-            on:mouseleave=move |_| is_hovered.set(false)
-        >
+        <div class="flex p-2 w-full h-full flex-col">
             <InventoryCapacityProgress inventory />
-            <div class="relative flex w-full h-full">
+            <div
+                on:mouseenter=move |_| is_hovered.set(true)
+                on:mouseleave=move |_| is_hovered.set(false)
+                class="relative flex w-full h-full"
+            >
                 <InventoryTransferOverlay show_overlay destination_inventory=inventory />
                 <For
                     each=move || stored_items.get()
@@ -75,17 +76,6 @@ pub fn DraggableItem(
         .find(|i| i.id == item_id)
         .expect("failed to find item id in ITEMS list");
 
-    let on_mouse_down = move |e: MouseEvent| {
-        e.prevent_default();
-        drag_state.dragging.set(Some(DragInfo {
-            item_id,
-            quantity,
-            source: inventory,
-            destination: None,
-            offset: (e.offset_x(), e.offset_y()),
-        }));
-        drag_state.mouse_pos.set((e.client_x(), e.client_y()));
-    };
     let item_qty = move || {
         inventory
             .get()
@@ -95,6 +85,18 @@ pub fn DraggableItem(
             .find(|i| i.0 == item_id)
             .unwrap()
             .1
+    };
+    let on_mouse_down = move |e: MouseEvent| {
+        e.prevent_default();
+        drag_state.dragging.set(Some(DragInfo {
+            item_id,
+            quantity: item_qty(),
+            source: inventory,
+            destination: None,
+            to_transfer: 0,
+            offset: (e.offset_x(), e.offset_y()),
+        }));
+        drag_state.mouse_pos.set((e.client_x(), e.client_y()));
     };
 
     view! {
@@ -146,7 +148,6 @@ pub fn DraggableItemOverlay() -> impl IntoView {
                             "fixed flex items-center justify-center font-bold text-lg h-16 w-16 pointer-events-none z-20 {}",
                             item.color(),
                         )
-                        class:cursor-grabbing=true
                         style=format!("left: {}px; top: {}px;", x - off_x, y - off_y)
                     >
                         <span>{item.id}</span>
@@ -178,7 +179,7 @@ fn InventoryCapacityProgress(inventory: RwSignal<Inventory>) -> impl IntoView {
                             max=max_weight
                             value=weight
                         />
-                        <span>{format!("{:.1} / {}t", weight, max_weight)}</span>
+                        <span>{format!("{} / {}t", weight, max_weight)}</span>
                         <progress
                             class="flex-1 h-3 w-12 bg-[#151515] border border-gray-300 [&::-webkit-progress-value]:bg-amber-300 [&::-moz-progress-bar]:bg-amber-300"
                             max=max_volume
@@ -192,14 +193,6 @@ fn InventoryCapacityProgress(inventory: RwSignal<Inventory>) -> impl IntoView {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
-enum TransferType {
-    ONE,
-    HUNDRED,
-    ALL,
-    MAX,
-}
-
 #[component]
 fn InventoryTransferOverlay<T>(
     show_overlay: T,
@@ -208,56 +201,113 @@ fn InventoryTransferOverlay<T>(
 where
     T: Fn() -> bool + std::marker::Sync + std::marker::Send + 'static,
 {
-    let drag_state = use_context::<DragState>().expect("context");
+    let drag_state = use_context::<DragState>().expect("DragState context missing");
 
-    let qty_can_transfer = 0;
+    let qty_can_transfer = Memo::new(move |_| {
+        let drag_info = drag_state
+            .dragging
+            .get()
+            .expect("DragState should be Some when dragging over an inventory overlay");
+        let available_items = drag_info.quantity;
+        let max_items = destination_inventory.with(|dest| dest.fits_max_items(drag_info.item_id));
 
-    // let on_enter = move |_| {
-    //     transfer_type.set(Some(transfer_type));
-    //     drag_state
-    //         .dragging
-    //         .update(|info| info.destination.set(inventory));
-    // };
+        available_items.min(max_items)
+    });
+
+    let reset_destination = move |_| {
+        drag_state.dragging.update(|drag_info_opt| {
+            if let Some(drag_info) = drag_info_opt {
+                *drag_info = DragInfo {
+                    destination: None,
+                    to_transfer: 0,
+                    ..drag_info.clone()
+                }
+            }
+        })
+    };
+    let set_destination_with_qty = move |qty: u64| {
+        drag_state.dragging.update(|drag_info_opt| {
+            if let Some(drag_info) = drag_info_opt {
+                *drag_info = DragInfo {
+                    destination: Some(destination_inventory),
+                    to_transfer: qty,
+                    ..drag_info.clone()
+                }
+            }
+        })
+    };
+
+    let transfer_options = [(1, "1"), (10, "10"), (100, "100"), (1000, "1k")];
 
     view! {
         <Show when=show_overlay>
-            <div class="absolute flex inset-0 z-10 bg-white/30 flex text-white text-5xl">
-                <div
-                    on:mouseenter=move |_| {
-                        drag_state
-                            .dragging
-                            .update(|drag_info_opt| {
-                                if let Some(drag_info) = drag_info_opt {
-                                    *drag_info = DragInfo {
-                                        destination: Some(destination_inventory),
-                                        quantity: 1,
-                                        ..drag_info.clone()
-                                    };
-                                }
-                            });
+            <div
+                on:mouseleave=reset_destination
+                class="absolute inset-0 z-20 flex bg-white/30 text-white text-5xl"
+            >
+                <For
+                    each=move || {
+                        transfer_options
+                            .iter()
+                            .copied()
+                            .filter(|&(qty, _)| qty_can_transfer.get() >= qty)
+                            .collect::<Vec<_>>()
                     }
-                    on:mouseleave=move |_| {
-                        drag_state
-                            .dragging
-                            .update(|drag_info_opt| {
-                                if let Some(drag_info) = drag_info_opt {
-                                    *drag_info = DragInfo {
-                                        destination: None,
-                                        ..drag_info.clone()
-                                    };
-                                }
-                            });
+                    key=|&(qty, _)| qty
+                    children=move |(qty, label)| {
+                        view! {
+                            <div
+                                on:mouseenter=move |_| { set_destination_with_qty(qty) }
+                                class="flex flex-1 items-center justify-center border-r border-gray-300 transition-all hover:text-amber-400"
+                            >
+                                {label}
+                            </div>
+                        }
                     }
-                    class="w-1/3 flex h-full items-center justify-center border-r border-gray-300 hover:text-amber-300"
-                >
-                    <span>"1"</span>
-                </div>
-                <div class="w-1/3 flex h-full items-center justify-center border-r border-gray-300 hover:text-amber-300">
-                    <span>"ALL"</span>
-                </div>
-                <div class="w-1/3 flex h-full items-center justify-center border-r border-gray-300 hover:text-amber-300">
-                    <span>"MAX"</span>
-                </div>
+                />
+                {
+                    let show_max = move || {
+                        qty_can_transfer.get() > 0
+                            && drag_state
+                                .dragging
+                                .get()
+                                .is_some_and(|info| info.quantity > qty_can_transfer.get())
+                    };
+                    let show_full = move || { qty_can_transfer.get() <= 0 };
+                    view! {
+                        <Show when=move || { !show_max() && !show_full() }>
+                            <div
+                                on:mouseenter=move |_| {
+                                    if let Some(info) = drag_state.dragging.get() {
+                                        set_destination_with_qty(info.quantity);
+                                    }
+                                }
+                                class="flex flex-1 h-full items-center justify-center hover:text-amber-300"
+                            >
+                                <span>"ALL"</span>
+                            </div>
+                        </Show>
+                        <Show when=show_max>
+                            <div
+                                on:mouseenter=move |_| set_destination_with_qty(
+                                    qty_can_transfer.get(),
+                                )
+                                class="flex flex-1 h-full items-center justify-center hover:text-amber-300"
+                            >
+                                <span>"MAX"</span>
+                            </div>
+                        </Show>
+                        <Show when=show_full>
+                            <div
+                                on:mouseenter=reset_destination
+                                class="flex flex-1 h-full items-center justify-center hover:text-rose-300"
+                            >
+                                <span>"INVENTORY CAPACITY EXCEEDED"</span>
+                            </div>
+                        </Show>
+                    }
+                }
+
             </div>
         </Show>
     }
