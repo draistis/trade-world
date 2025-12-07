@@ -19,11 +19,11 @@ pub fn Header() -> impl IntoView {
     };
 
     view! {
-        <nav class="bg-white border-gray-200 px-4 lg:px-6 py-1 dark:bg-gray-800">
+        <nav class="px-4 lg:px-6 py-1 bg-slate-800/70">
             <div class="flex justify-between items-center mx-auto max-w-11/12">
                 <a href="/" class="flex-1 flex items-center">
                     <svg
-                        fill="#fafafa"
+                        fill="#f3f4f6"
                         class="mr-3 h-12 w-12"
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 512 512"
@@ -71,14 +71,14 @@ pub fn Header() -> impl IntoView {
                             </g>
                         </g>
                     </svg>
-                    <span class="text-xl font-semibold whitespace-nowrap dark:text-white">
+                    <span class="text-2xl font-semibold whitespace-nowrap text-primary-text">
                         "Trade World"
                     </span>
                 </a>
-                <div class="flex flex-1 justify-center text-white text-xl">
+                <div class="flex flex-1 justify-center text-primary-text text-3xl">
                     <span>{id}</span>
                 </div>
-                <div class="flex flex-1 justify-end text-white text-xl">
+                <div class="flex flex-1 justify-end text-primary-text font-semibold text-3xl">
                     {move || format!("{:.2}", context.cash.get())}
                 </div>
             </div>

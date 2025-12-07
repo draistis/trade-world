@@ -165,7 +165,7 @@ pub fn DraggableItemOverlay() -> impl IntoView {
 fn InventoryCapacityProgress(inventory: RwSignal<Inventory>) -> impl IntoView {
     view! {
         <div class="flex w-full h-fit items-center gap-2">
-            <span class="text-sm text-gray-300">{move || inventory.get().id}</span>
+            <span class="text-sm text-primary-text">{move || inventory.get().id}</span>
             {move || {
                 let max_weight = inventory.get().max_weight.get();
                 let max_volume = inventory.get().max_volume.get();
@@ -173,9 +173,9 @@ fn InventoryCapacityProgress(inventory: RwSignal<Inventory>) -> impl IntoView {
                 let volume = inventory.get().volume.get();
 
                 view! {
-                    <div class="flex items-center gap-2">
+                    <div class="flex justify-center items-center gap-2">
                         <progress
-                            class="flex-1 h-3 w-12 bg-[#151515] border border-gray-300 [&::-webkit-progress-value]:bg-amber-300 [&::-moz-progress-bar]:bg-amber-300"
+                            class="flex-1 h-3 w-12 bg-primary-bg border border-primary-text [&::-webkit-progress-value]:bg-highlight [&::-moz-progress-bar]:bg-highlight"
                             max=max_weight
                             value=weight
                         />
@@ -183,7 +183,7 @@ fn InventoryCapacityProgress(inventory: RwSignal<Inventory>) -> impl IntoView {
                             {format!("{:.1} / {}t", weight as f64 / 1000.0, max_weight / 1000)}
                         </span>
                         <progress
-                            class="flex-1 h-3 w-12 bg-[#151515] border border-gray-300 [&::-webkit-progress-value]:bg-amber-300 [&::-moz-progress-bar]:bg-amber-300"
+                            class="flex-1 h-3 w-12 bg-primary-bg border border-primary-text [&::-webkit-progress-value]:bg-highlight [&::-moz-progress-bar]:bg-highlight"
                             max=max_volume
                             value=volume
                         />

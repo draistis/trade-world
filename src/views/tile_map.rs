@@ -10,10 +10,10 @@ pub fn TileMapPage() -> impl IntoView {
         <div class="h-screen flex flex-col">
             <Header />
             <div class="flex flex-1 overflow-hidden">
-                <div class="flex-1 flex items-center justify-center bg-gray-900 border-r border-gray-700">
+                <div class="flex-1 flex items-center justify-center border-r border-primary-border">
                     <TileMap />
                 </div>
-                <div class="w-1/3 flex flex-col bg-gray-900 border-r">
+                <div class="w-5/12 flex flex-col">
                     <TileOverview />
                 </div>
             </div>
@@ -59,44 +59,42 @@ fn TileOverview() -> impl IntoView {
 
     view! {
         <div class="flex flex-col h-full">
-            <div class="p-6 border-b border-gray-700">
-                <div class="text-2xl font-semibold">{move || tile_info.get().id}</div>
+            <div class="flex p-4 border-b border-primary-border">
+                <div class="text-4xl font-semibold">{move || tile_info.get().id}</div>
             </div>
 
-            <div class="flex-1 p-6 space-y-4 overflow-y-auto">
-                <div>
-                    <p class="text-gray-400">
-                        "Description: "{move || tile_info.get().description}
-                    </p>
-                    <p class="text-gray-400">
+            <div class="flex-1 flex p-4 space-y-4 overflow-y-auto border-b border-primary-border">
+                <div class="text-2xl">
+                    <p class="">"Description: "{move || tile_info.get().description}</p>
+                    <p class="">
                         "Resources: "{move || format!("{:?}", tile_info.get().resources)}
                     </p>
                 </div>
             </div>
 
-            <div class="p-6 border-t border-gray-700 flex justify-between items-center h-18">
+            <div class="p-6 flex justify-between items-center h-20">
                 <Show
                     when=move || !tile_info.get().is_owned.get()
                     fallback=move || {
                         view! {
-                            <div class="text-lg">"Purchased"</div>
+                            <div class="text-3xl font-semibold">"Purchased"</div>
                             <A
                                 href=format!("/tile/{}", tile_info.get().id)
-                                attr:class="px-6 py-2 border-2 border-white hover:bg-white hover:text-black transition-colors"
+                                attr:class="px-6 py-2 border-2 font-bold text-xl hover:bg-hover-btn transition-colors"
                             >
-                                "Manage tile"
+                                "MANAGE TILE"
                             </A>
                         }
                     }
                 >
-                    <div class="text-lg">
+                    <div class="text-3xl font-semibold">
                         "Price: $"{move || format!("{:.2}", tile_info.get().price)}
                     </div>
                     <button
                         on:click=buy_tile
-                        class="px-6 py-2 border-2 border-white hover:bg-white hover:text-black transition-colors"
+                        class="px-6 py-2 hover:cursor-pointer border-2 font-bold text-xl bg-destructive hover:bg-destructive-hover transition-colors"
                     >
-                        "Purchase"
+                        "PURCHASE"
                     </button>
                 </Show>
             </div>
@@ -198,7 +196,6 @@ fn Tile(
     let selected_tile =
         use_context::<SelectedTile>().expect("failed to get SelectedTile from context");
 
-    // let name_clone = name.clone();
     let is_selected = move || selected_tile.0.get().eq(name);
 
     let on_click = move |e: MouseEvent| {
@@ -211,13 +208,9 @@ fn Tile(
     view! {
         <polygon
             points=points
-            class=move || {
-                if is_selected() {
-                    "fill-green-700 stroke-gray-500 stroke-2 cursor-pointer hover:fill-green-600"
-                } else {
-                    "fill-gray-700 stroke-gray-500 stroke-2 cursor-pointer hover:fill-gray-600"
-                }
-            }
+            class="stroke-primary-border stroke-2 cursor-pointer"
+            class=(["fill-tertiary-bg", "hover:fill-secondary-bg"], move || !is_selected())
+            class=(["fill-highlight", "hover:fill-highlight-hover"], is_selected)
             on:click=on_click
         />
     }

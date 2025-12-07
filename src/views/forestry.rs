@@ -21,18 +21,18 @@ pub fn ForestryPage() -> impl IntoView {
         *fell_progress.write() += 1;
         if fell_progress.get() >= 10 {
             fell_progress.set(0);
-            *game_state.logs.write() += 1;
+            *game_state.cash.write() += 1.0;
         }
     };
     let rent_forwarder = move || {
         if game_state.cash.get() >= 250. {
             *game_state.cash.write() -= 250.;
-            if game_state.logs.get() >= 25 {
-                *game_state.logs.write() -= 25;
+            if game_state.cash.get() >= 25.0 {
+                *game_state.cash.write() -= 25.0;
                 *game_state.cash.write() += 25. * log_price;
             } else {
-                *game_state.cash.write() += game_state.logs.get() as f64 * log_price;
-                game_state.logs.set(0);
+                *game_state.cash.write() += game_state.cash.get() * log_price;
+                game_state.cash.set(0.0);
             }
         }
     };
@@ -68,7 +68,7 @@ pub fn ForestryPage() -> impl IntoView {
     view! {
         <Header />
         <div class="flex flex-col items-center justify-center mt-11 mx-auto gap-4 max-w-3xl px-6 sm:px-6 lg:px-8">
-            <h4>"Logs (1x = $20): "{move || game_state.logs.get()}</h4>
+            <h4>"Logs (1x = $20): "{move || game_state.cash.get()}</h4>
             <Button variant=ButtonVariant::Green on_click=inc_logs>
                 <div>"Fell tree " {fell_progress} "/10"</div>
             </Button>

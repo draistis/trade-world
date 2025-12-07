@@ -71,12 +71,12 @@ pub fn TilePage() -> impl IntoView {
             <Header />
             <DraggableItemOverlay />
             <div class="flex flex-1">
-                <div class="flex border-r border-gray-500 w-1/2 lg:w-1/3">
+                <div class="flex border-r border-primary-border w-1/2 lg:w-1/3">
                     <Tabs default_value="overview">
                         <TabsList>
-                            <TabsTrigger value="overview">Overview</TabsTrigger>
-                            <TabsTrigger value="buildings">Buildings</TabsTrigger>
-                            <TabsTrigger value="workers">Workers</TabsTrigger>
+                            <TabsTrigger value="overview">"OVERVIEW"</TabsTrigger>
+                            <TabsTrigger value="buildings">"BUILDINGS"</TabsTrigger>
+                            <TabsTrigger value="workers">"WORKERS"</TabsTrigger>
                         </TabsList>
                         <TabsContent value="overview">
                             <OverviewTab />
@@ -89,13 +89,13 @@ pub fn TilePage() -> impl IntoView {
                 </div>
                 <div class="flex flex-1">
                     <div class="flex flex-col w-full h-full">
-                        <div class="flex flex-1 border-b border-gray-500 overflow-hidden">
+                        <div class="flex flex-1 border-b border-primary-border overflow-hidden">
                             {move || {
                                 let inventory = tile.get().unwrap().tile_state.inventory;
                                 view! { <InventoryContainer inventory=inventory /> }
                             }}
                         </div>
-                        <div class="flex flex-1 border-b border-gray-500 overflow-hidden">
+                        <div class="flex flex-1 border-b border-primary-border overflow-hidden">
                             <InventoryContainer inventory=inv2 />
                         </div>
                         <div class="flex flex-1 overflow-hidden h-1/3">
@@ -125,51 +125,81 @@ pub fn OverviewTab() -> impl IntoView {
 pub fn BuildingsTab() -> impl IntoView {
     let tile = use_context::<TileContext>().expect("tile context").0;
 
+    let build_waterpump = move |_| {
+        tile.get().map(|tile| {
+            tile.tile_state
+                .buildings
+                .production
+                .water_pump
+                .update(|h| *h += 1)
+        });
+    };
+    let build_sawmill = move |_| {
+        tile.get().map(|tile| {
+            tile.tile_state
+                .buildings
+                .production
+                .sawmill
+                .update(|h| *h += 1)
+        });
+    };
+    let build_warehouse = move |_| {
+        tile.get().map(|tile| {
+            tile.tile_state
+                .buildings
+                .production
+                .warehouse
+                .update(|h| *h += 1)
+        });
+    };
+    let water_pumps = move || {
+        tile.get()
+            .map(|tile| tile.tile_state.buildings.production.water_pump.get())
+            .unwrap_or(0)
+    };
+    let sawmills = move || {
+        tile.get()
+            .map(|tile| tile.tile_state.buildings.production.sawmill.get())
+            .unwrap_or(0)
+    };
+    let warehouses = move || {
+        tile.get()
+            .map(|tile| tile.tile_state.buildings.production.warehouse.get())
+            .unwrap_or(0)
+    };
+
     let build_cheap = move |_| {
-        *tile
-            .get()
-            .unwrap()
-            .tile_state
-            .buildings
-            .housing
-            .cheap
-            .write() += 1;
+        tile.get()
+            .map(|tile| tile.tile_state.buildings.housing.cheap.update(|h| *h += 1));
     };
     let build_standard = move |_| {
-        *tile
-            .get()
-            .unwrap()
-            .tile_state
-            .buildings
-            .housing
-            .standard
-            .write() += 1;
+        tile.get().map(|tile| {
+            tile.tile_state
+                .buildings
+                .housing
+                .standard
+                .update(|h| *h += 1)
+        });
     };
     let build_fancy = move |_| {
-        *tile
-            .get()
-            .unwrap()
-            .tile_state
-            .buildings
-            .housing
-            .standard
-            .write() += 1;
+        tile.get()
+            .map(|tile| tile.tile_state.buildings.housing.fancy.update(|h| *h += 1));
     };
 
     let cheap_houses = move || {
-        tile.get().unwrap().tile_state.buildings.housing.cheap.get();
+        tile.get()
+            .map(|tile| tile.tile_state.buildings.housing.cheap.get())
+            .unwrap_or(0)
     };
     let standard_houses = move || {
         tile.get()
-            .unwrap()
-            .tile_state
-            .buildings
-            .housing
-            .standard
-            .get();
+            .map(|tile| tile.tile_state.buildings.housing.standard.get())
+            .unwrap_or(0)
     };
     let fancy_houses = move || {
-        tile.get().unwrap().tile_state.buildings.housing.fancy.get();
+        tile.get()
+            .map(|tile| tile.tile_state.buildings.housing.fancy.get())
+            .unwrap_or(0)
     };
 
     view! {
@@ -179,59 +209,44 @@ pub fn BuildingsTab() -> impl IntoView {
                 <AccordionContent>
                     <div class="w-full flex justify-between pb-2">
                         <div class="flex flex-col">
-                            <div class="text-md font-semibold">"Water Pump"</div>
+                            <div class="text-md font-semibold">
+                                {move || format!("Water pump ({})", water_pumps())}
+                            </div>
                             <div class="text-sm">"Extracts liquid water."</div>
                         </div>
                         <button
-                            on:click=move |_| {
-                                *tile
-                                    .get()
-                                    .unwrap()
-                                    .tile_state
-                                    .buildings
-                                    .production
-                                    .water_pump
-                                    .write() += 1;
-                            }
-                            class="border font-bold hover:cursor-pointer my-1 border-indigo-400 py-2 px-4"
+                            on:click=build_waterpump
+                            class="border font-bold hover:bg-destructive-dim/30 border-destructive-dim hover:cursor-pointer my-1 py-2 px-4"
                         >
-                            "Build"
+                            "BUILD"
                         </button>
                     </div>
                     <div class="w-full flex justify-between pb-2">
                         <div class="flex flex-col">
-                            <div class="text-md font-semibold">"Sawmill"</div>
+                            <div class="text-md font-semibold">
+                                {move || format!("Sawmill ({})", sawmills())}
+                            </div>
                             <div class="text-sm">"Turns logs into boards and woodchips."</div>
                         </div>
                         <button
-                            on:click=move |_| {
-                                *tile.get().unwrap().tile_state.buildings.production.sawmill.write()
-                                    += 1;
-                            }
-                            class="border font-bold hover:cursor-pointer my-1 border-indigo-400 py-2 px-4"
+                            on:click=build_sawmill
+                            class="border font-bold hover:cursor-pointer hover:bg-destructive-dim/30 my-1 border-destructive-dim py-2 px-4"
                         >
-                            "Build"
+                            "BUILD"
                         </button>
                     </div>
                     <div class="w-full flex justify-between">
                         <div class="flex flex-col">
-                            <div class="text-md font-semibold">"Warehouse"</div>
+                            <div class="text-md font-semibold">
+                                {move || format!("Warehouse ({})", warehouses())}
+                            </div>
                             <div class="text-sm">"Warehouse for storing stuff."</div>
                         </div>
                         <button
-                            on:click=move |_| {
-                                *tile
-                                    .get()
-                                    .unwrap()
-                                    .tile_state
-                                    .buildings
-                                    .production
-                                    .warehouse
-                                    .write() += 1;
-                            }
-                            class="border font-bold hover:cursor-pointer my-1 border-indigo-400 py-2 px-4"
+                            on:click=build_warehouse
+                            class="border font-bold hover:cursor-pointer my-1 border-destructive-dim hover:bg-destructive-dim/30 py-2 px-4"
                         >
-                            "Build"
+                            "BUILD"
                         </button>
                     </div>
                 </AccordionContent>
@@ -241,38 +256,44 @@ pub fn BuildingsTab() -> impl IntoView {
                 <AccordionContent>
                     <div class="w-full flex justify-between pb-2">
                         <div class="flex flex-col">
-                            <div class="text-md font-semibold">"Basic housing"</div>
+                            <div class="text-md font-semibold">
+                                {move || format!("Cheap housing ({})", cheap_houses())}
+                            </div>
                             <div class="text-sm">"Can house up to 10 basic workers."</div>
                         </div>
                         <button
                             on:click=build_cheap
-                            class="border font-bold hover:cursor-pointer my-1 border-indigo-400 py-2 px-4"
+                            class="border font-bold hover:cursor-pointer my-1 border-destructive-dim hover:bg-destructive-dim/30 py-2 px-4"
                         >
-                            "Build"
+                            "BUILD"
                         </button>
                     </div>
                     <div class="w-full flex justify-between pb-2">
                         <div class="flex flex-col">
-                            <div class="text-md font-semibold">"Advanced housing"</div>
+                            <div class="text-md font-semibold">
+                                {move || format!("Standard housing ({})", standard_houses())}
+                            </div>
                             <div class="text-sm">"Can house up to 6 advanced workers."</div>
                         </div>
                         <button
                             on:click=build_standard
-                            class="border font-bold hover:cursor-pointer my-1 border-indigo-400 py-2 px-4"
+                            class="border font-bold hover:cursor-pointer my-1 border-destructive-dim hover:bg-destructive-dim/30 py-2 px-4"
                         >
-                            "Build"
+                            "BUILD"
                         </button>
                     </div>
                     <div class="w-full flex justify-between">
                         <div class="flex flex-col">
-                            <div class="text-md font-semibold">"Expert housing"</div>
+                            <div class="text-md font-semibold">
+                                {move || format!("Fancy housing ({})", fancy_houses())}
+                            </div>
                             <div class="text-sm">"Can house up to 3 expert workers."</div>
                         </div>
                         <button
                             on:click=build_fancy
-                            class="border font-bold hover:cursor-pointer my-1 border-indigo-400 py-2 px-4"
+                            class="border font-bold hover:cursor-pointer my-1 border-destructive-dim hover:bg-destructive-dim/30 py-2 px-4"
                         >
-                            "Build"
+                            "BUILD"
                         </button>
                     </div>
                 </AccordionContent>

@@ -41,7 +41,7 @@ pub fn Accordion(
 pub fn AccordionItem(value: &'static str, children: Children) -> impl IntoView {
     provide_context::<AccordionValue>(AccordionValue(value));
 
-    view! { <div class="border-b border-gray-700">{children()}</div> }
+    view! { <div class="border-b border-primary-border">{children()}</div> }
 }
 
 #[component]
@@ -71,7 +71,7 @@ pub fn AccordionTrigger(children: Children) -> impl IntoView {
 
     view! {
         <button
-            class="flex w-full items-center justify-between py-2 text-left font-medium transition-all hover:underline hover:cursor-pointer"
+            class="flex w-full items-center justify-between text-primary-text py-2 px-4 text-left text-lg font-medium transition-all hover:underline hover:cursor-pointer"
             on:click=on_click
         >
             {children()}
@@ -102,16 +102,13 @@ pub fn AccordionContent(children: Children) -> impl IntoView {
         .expect("AccordionTrigger must be used inside of an AccordionItem")
         .0;
 
-    let is_hidden = move || !ctx.is_open(value);
-
-    // Switch to <Show> for instant opening
     view! {
         <div
             class="overflow-hidden transition-all duration-200 mx-2"
-            class:max-h-0=is_hidden
-            class:max-h-96=move || !is_hidden()
+            class:max-h-0=move || !ctx.is_open(value)
+            class:max-h-96=move || ctx.is_open(value)
         >
-            <div class="pb-2 text-gray-200">{children()}</div>
+            <div class="px-4 pb-2 text-primary-text">{children()}</div>
         </div>
     }
 }

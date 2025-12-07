@@ -12,7 +12,7 @@ pub fn Tabs(default_value: &'static str, children: Children) -> impl IntoView {
 
 #[component]
 pub fn TabsList(children: Children) -> impl IntoView {
-    view! { <div class="inline-flex items-center border-b border-gray-700">{children()}</div> }
+    view! { <div class="inline-flex items-center border-b border-primary-border">{children()}</div> }
 }
 
 #[component]
@@ -28,9 +28,9 @@ pub fn TabsTrigger(value: &'static str, children: Children) -> impl IntoView {
     view! {
         <button
             on:click=on_click
-            class="px-4 py-2 -mb-px transition-colors cursor-pointer"
-            class=(["border-b-2", "border-white", "text-white"], is_active)
-            class=(["text-gray", "hover:text-gray-200"], move || !is_active())
+            class="px-4 py-2 -mb-px cursor-pointer text-lg font-semibold"
+            class=(["border-focus-border", "border-b-2", "text-primary-text"], is_active)
+            class=(["text-secondary-text", "hover:text-primary-text"], move || !is_active())
         >
             {children()}
         </button>

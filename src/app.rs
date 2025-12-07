@@ -24,7 +24,7 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                 <HydrationScripts options />
                 <MetaTags />
             </head>
-            <body class="antialiased bg-[#151515] text-[#fafafa]">
+            <body class="antialiased bg-primary-bg text-primary-text">
                 <App />
             </body>
         </html>
