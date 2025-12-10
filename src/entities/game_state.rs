@@ -14,7 +14,7 @@ pub struct GameState {
 impl GameState {
     pub fn new() -> Self {
         Self {
-            cash: RwSignal::new(1000.),
+            cash: RwSignal::new(10000.),
             inventory: RwSignal::new(HashMap::new()),
             tiles: RwSignal::new(Vec::new()),
         }

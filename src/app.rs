@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use leptos::prelude::*;
 use leptos_meta::{provide_meta_context, MetaTags, Stylesheet, Title};
 use leptos_router::{
@@ -39,10 +37,7 @@ pub fn ProvideGameState() -> impl IntoView {
     tiles.push(Tile {
         id: "STR-1001",
         description: "Test tile 1",
-        resources: HashMap::from([
-            ("Water".to_string(), "60%".to_string()),
-            ("Wood".to_string(), "40%".to_string()),
-        ]),
+        resources: ["Water: 60%", "Wood: 24%"].into(),
         price: 490.90,
         is_owned: RwSignal::new(false),
         row: 0,
@@ -53,11 +48,7 @@ pub fn ProvideGameState() -> impl IntoView {
     tiles.push(Tile {
         id: "STR-1002",
         description: "Test tile 2",
-        resources: HashMap::from([
-            ("Water".to_string(), "20%".to_string()),
-            ("Wood".to_string(), "20%".to_string()),
-            ("Grass".to_string(), "53%".to_string()),
-        ]),
+        resources: ["Water: 60%", "Wood: 24%"].into(),
         price: 121.00,
         is_owned: RwSignal::new(true),
         row: 0,
@@ -68,10 +59,7 @@ pub fn ProvideGameState() -> impl IntoView {
     tiles.push(Tile {
         id: "STR-1003",
         description: "Test tile 3",
-        resources: HashMap::from([
-            ("Water".to_string(), "10%".to_string()),
-            ("Wood".to_string(), "78%".to_string()),
-        ]),
+        resources: ["Water: 60%", "Wood: 24%"].into(),
         price: 525.00,
         is_owned: RwSignal::new(false),
         row: 1,
@@ -82,10 +70,7 @@ pub fn ProvideGameState() -> impl IntoView {
     tiles.push(Tile {
         id: "STR-1004",
         description: "Test tile 4",
-        resources: HashMap::from([
-            ("Water".to_string(), "80%".to_string()),
-            ("Fish".to_string(), "30%".to_string()),
-        ]),
+        resources: ["Water: 60%", "Wood: 24%"].into(),
         price: 710.55,
         is_owned: RwSignal::new(false),
         row: 1,

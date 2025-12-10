@@ -103,7 +103,7 @@ pub fn DraggableItem(
         <div
             on:mousedown=on_mouse_down
             class=format!(
-                "relative p-2 m-1 flex items-center justify-center font-bold text-lg select-none h-16 w-16 text-shadow-lg {}",
+                "relative p-2 m-1 flex items-center hover:cursor-pointer justify-center font-bold text-lg select-none h-16 w-16 text-shadow-lg {}",
                 item.color(),
             )
         >

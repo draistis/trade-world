@@ -1,6 +1,9 @@
 use crate::components::header::Header;
 use crate::components::inventory::DraggableItemOverlay;
 use crate::components::InventoryContainer;
+use crate::entities::tile::HousingType;
+use crate::entities::tile::ProductionBuildingType;
+use crate::entities::tile::WorkerType;
 use crate::entities::GameState;
 use crate::entities::Inventory;
 use crate::entities::Tile;
@@ -84,7 +87,9 @@ pub fn TilePage() -> impl IntoView {
                         <TabsContent value="buildings">
                             <BuildingsTab />
                         </TabsContent>
-                        <TabsContent value="workers">"workers tab content"</TabsContent>
+                        <TabsContent value="workers">
+                            <WorkersTab />
+                        </TabsContent>
                     </Tabs>
                 </div>
                 <div class="flex flex-1">
@@ -123,179 +128,138 @@ pub fn OverviewTab() -> impl IntoView {
 
 #[component]
 pub fn BuildingsTab() -> impl IntoView {
+    let game_state = use_context::<GameState>().expect("game state context");
     let tile = use_context::<TileContext>().expect("tile context").0;
-
-    let build_waterpump = move |_| {
-        tile.get().map(|tile| {
-            tile.tile_state
-                .buildings
-                .production
-                .water_pump
-                .update(|h| *h += 1)
-        });
-    };
-    let build_sawmill = move |_| {
-        tile.get().map(|tile| {
-            tile.tile_state
-                .buildings
-                .production
-                .sawmill
-                .update(|h| *h += 1)
-        });
-    };
-    let build_warehouse = move |_| {
-        tile.get().map(|tile| {
-            tile.tile_state
-                .buildings
-                .production
-                .warehouse
-                .update(|h| *h += 1)
-        });
-    };
-    let water_pumps = move || {
-        tile.get()
-            .map(|tile| tile.tile_state.buildings.production.water_pump.get())
-            .unwrap_or(0)
-    };
-    let sawmills = move || {
-        tile.get()
-            .map(|tile| tile.tile_state.buildings.production.sawmill.get())
-            .unwrap_or(0)
-    };
-    let warehouses = move || {
-        tile.get()
-            .map(|tile| tile.tile_state.buildings.production.warehouse.get())
-            .unwrap_or(0)
-    };
-
-    let build_cheap = move |_| {
-        tile.get()
-            .map(|tile| tile.tile_state.buildings.housing.cheap.update(|h| *h += 1));
-    };
-    let build_standard = move |_| {
-        tile.get().map(|tile| {
-            tile.tile_state
-                .buildings
-                .housing
-                .standard
-                .update(|h| *h += 1)
-        });
-    };
-    let build_fancy = move |_| {
-        tile.get()
-            .map(|tile| tile.tile_state.buildings.housing.fancy.update(|h| *h += 1));
-    };
-
-    let cheap_houses = move || {
-        tile.get()
-            .map(|tile| tile.tile_state.buildings.housing.cheap.get())
-            .unwrap_or(0)
-    };
-    let standard_houses = move || {
-        tile.get()
-            .map(|tile| tile.tile_state.buildings.housing.standard.get())
-            .unwrap_or(0)
-    };
-    let fancy_houses = move || {
-        tile.get()
-            .map(|tile| tile.tile_state.buildings.housing.fancy.get())
-            .unwrap_or(0)
-    };
+    let money = game_state.cash;
 
     view! {
         <Accordion of_type=AccordionType::Multiple collapsible=true>
             <AccordionItem value="production-buildings">
                 <AccordionTrigger>"Production Buildings"</AccordionTrigger>
                 <AccordionContent>
-                    <div class="w-full flex justify-between pb-2">
-                        <div class="flex flex-col">
-                            <div class="text-md font-semibold">
-                                {move || format!("Water pump ({})", water_pumps())}
-                            </div>
-                            <div class="text-sm">"Extracts liquid water."</div>
-                        </div>
-                        <button
-                            on:click=build_waterpump
-                            class="border font-bold hover:bg-destructive-dim/30 border-destructive-dim hover:cursor-pointer my-1 py-2 px-4"
-                        >
-                            "BUILD"
-                        </button>
-                    </div>
-                    <div class="w-full flex justify-between pb-2">
-                        <div class="flex flex-col">
-                            <div class="text-md font-semibold">
-                                {move || format!("Sawmill ({})", sawmills())}
-                            </div>
-                            <div class="text-sm">"Turns logs into boards and woodchips."</div>
-                        </div>
-                        <button
-                            on:click=build_sawmill
-                            class="border font-bold hover:cursor-pointer hover:bg-destructive-dim/30 my-1 border-destructive-dim py-2 px-4"
-                        >
-                            "BUILD"
-                        </button>
-                    </div>
-                    <div class="w-full flex justify-between">
-                        <div class="flex flex-col">
-                            <div class="text-md font-semibold">
-                                {move || format!("Warehouse ({})", warehouses())}
-                            </div>
-                            <div class="text-sm">"Warehouse for storing stuff."</div>
-                        </div>
-                        <button
-                            on:click=build_warehouse
-                            class="border font-bold hover:cursor-pointer my-1 border-destructive-dim hover:bg-destructive-dim/30 py-2 px-4"
-                        >
-                            "BUILD"
-                        </button>
-                    </div>
+                    <For
+                        each=move || ProductionBuildingType::all()
+                        key=|prod_type| *prod_type
+                        children=move |production_type: ProductionBuildingType| {
+                            view! {
+                                <div class="w-full flex justify-between pb-2">
+                                    <div class="flex flex-col">
+                                        <div class="text-md font-semibold">
+                                            {move || {
+                                                format!(
+                                                    "Water pump ({})",
+                                                    tile
+                                                        .get()
+                                                        .unwrap()
+                                                        .owned_production_buildings(production_type),
+                                                )
+                                            }}
+                                        </div>
+                                        <div class="text-sm">"Extracts liquid water."</div>
+                                    </div>
+                                    <button
+                                        on:click=move |_| {
+                                            tile.get().unwrap().build_production(production_type, money)
+                                        }
+                                        class="border font-bold hover:bg-destructive-dim/30 border-destructive-dim hover:cursor-pointer my-1 py-2 px-4"
+                                    >
+                                        "BUILD"
+                                    </button>
+                                </div>
+                            }
+                        }
+                    />
                 </AccordionContent>
             </AccordionItem>
             <AccordionItem value="worker-housing">
                 <AccordionTrigger>"Worker Housing"</AccordionTrigger>
                 <AccordionContent>
-                    <div class="w-full flex justify-between pb-2">
-                        <div class="flex flex-col">
-                            <div class="text-md font-semibold">
-                                {move || format!("Cheap housing ({})", cheap_houses())}
-                            </div>
-                            <div class="text-sm">"Can house up to 10 basic workers."</div>
-                        </div>
-                        <button
-                            on:click=build_cheap
-                            class="border font-bold hover:cursor-pointer my-1 border-destructive-dim hover:bg-destructive-dim/30 py-2 px-4"
-                        >
-                            "BUILD"
-                        </button>
-                    </div>
-                    <div class="w-full flex justify-between pb-2">
-                        <div class="flex flex-col">
-                            <div class="text-md font-semibold">
-                                {move || format!("Standard housing ({})", standard_houses())}
-                            </div>
-                            <div class="text-sm">"Can house up to 6 advanced workers."</div>
-                        </div>
-                        <button
-                            on:click=build_standard
-                            class="border font-bold hover:cursor-pointer my-1 border-destructive-dim hover:bg-destructive-dim/30 py-2 px-4"
-                        >
-                            "BUILD"
-                        </button>
-                    </div>
-                    <div class="w-full flex justify-between">
-                        <div class="flex flex-col">
-                            <div class="text-md font-semibold">
-                                {move || format!("Fancy housing ({})", fancy_houses())}
-                            </div>
-                            <div class="text-sm">"Can house up to 3 expert workers."</div>
-                        </div>
-                        <button
-                            on:click=build_fancy
-                            class="border font-bold hover:cursor-pointer my-1 border-destructive-dim hover:bg-destructive-dim/30 py-2 px-4"
-                        >
-                            "BUILD"
-                        </button>
-                    </div>
+                    <For
+                        each=move || HousingType::all()
+                        key=|housing_type| *housing_type
+                        children=move |housing_type: HousingType| {
+                            view! {
+                                <div class="w-full flex justify-between pb-2">
+                                    <div class="flex flex-col">
+                                        <div class="text-md font-semibold">
+                                            {move || {
+                                                format!(
+                                                    "Cheap housing ({})",
+                                                    tile.get().unwrap().owned_housing(housing_type),
+                                                )
+                                            }}
+                                        </div>
+                                        <div class="text-sm">
+                                            "Can house up to 10 basic workers."
+                                        </div>
+                                    </div>
+                                    <button
+                                        on:click=move |_| {
+                                            tile.get().unwrap().build_housing(housing_type, money)
+                                        }
+                                        class="border font-bold hover:cursor-pointer my-1 border-destructive-dim hover:bg-destructive-dim/30 py-2 px-4"
+                                    >
+                                        "BUILD"
+                                    </button>
+                                </div>
+                            }
+                                .into_any()
+                        }
+                    />
+                </AccordionContent>
+            </AccordionItem>
+        </Accordion>
+    }
+}
+
+#[component]
+pub fn WorkersTab() -> impl IntoView {
+    let game_state = use_context::<GameState>().expect("Game state context");
+    let tile = use_context::<TileContext>()
+        .expect("context of tile type")
+        .0;
+    let money = game_state.cash;
+    let error_message = RwSignal::new(None);
+
+    view! {
+        <Accordion of_type=AccordionType::Multiple collapsible=true>
+            <AccordionItem value="worker-hire">
+                <AccordionTrigger>"Workers"</AccordionTrigger>
+                <AccordionContent>
+                    <For
+                        each=move || WorkerType::all()
+                        key=|worker_type| *worker_type
+                        children=move |worker_type: WorkerType| {
+                            view! {
+                                <div class="flex flex-1 justify-between items-center pb-2">
+                                    <div class="flex flex-col">
+                                        <div class="text-md font-semibold">"Basic workers"</div>
+                                        <div class="text-sm">
+                                            {move || {
+                                                let tile = tile.get().unwrap();
+                                                format!(
+                                                    "Capacity {}/{}",
+                                                    tile.hired_workers(worker_type),
+                                                    tile.available_workers(worker_type),
+                                                )
+                                            }}
+                                        </div>
+                                    </div>
+                                    <button
+                                        class="border font-bold hover:cursor-pointer my-1 border-destructive-dim hover:bg-destructive-dim/30 py-2 px-4"
+                                        on:click=move |_| {
+                                            error_message
+                                                .set(
+                                                    tile.get().unwrap().hire_worker(worker_type, money).err(),
+                                                );
+                                        }
+                                    >
+                                        "HIRE"
+                                    </button>
+                                </div>
+                            }
+                        }
+                    />
                 </AccordionContent>
             </AccordionItem>
         </Accordion>
