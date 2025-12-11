@@ -5,5 +5,6 @@ pub mod inventory;
 pub mod tabs;
 
 pub use accordion::{Accordion, AccordionContent, AccordionItem, AccordionTrigger, AccordionType};
-pub use inventory::InventoryContainer;
+pub use header::Header;
+pub use inventory::{DragState, DraggableItemOverlay, InventoryContainer};
 pub use tabs::{Tabs, TabsContent, TabsList, TabsTrigger};

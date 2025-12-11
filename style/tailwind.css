@@ -21,7 +21,7 @@
             --color-highlight: oklch(82.8% 0.189 84.429);
             --color-highlight-hover: oklch(76.9% 0.188 70.08);
             --color-highlight-active: oklch(66.6% 0.179 58.318);
-            --color-highlight-dim: #78350f;
+            --color-highlight-dim: oklch(89.24% 0.13466 89.316);
 
             --color-success: #10b981;
             --color-success-hover: #059669;

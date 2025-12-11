@@ -1,25 +1,26 @@
-use crate::components::header::Header;
-use crate::components::inventory::DraggableItemOverlay;
-use crate::components::InventoryContainer;
-use crate::entities::tile::HousingType;
-use crate::entities::tile::ProductionBuildingType;
-use crate::entities::tile::WorkerType;
-use crate::entities::GameState;
-use crate::entities::Inventory;
-use crate::entities::Tile;
-use leptos::ev::mousemove;
-use leptos::ev::mouseup;
-use leptos::ev::MouseEvent;
+use leptos::ev::{mousemove, mouseup, MouseEvent};
 use leptos::prelude::*;
 use leptos::Params;
 use leptos_router::hooks::use_params;
 use leptos_router::params::Params;
 
-use crate::components::inventory::DragState;
 use crate::components::{
     Accordion, AccordionContent, AccordionItem, AccordionTrigger, AccordionType,
 };
+use crate::components::{DragState, DraggableItemOverlay, Header, InventoryContainer};
 use crate::components::{Tabs, TabsContent, TabsList, TabsTrigger};
+use crate::entities::{GameState, HousingType, Inventory, ProductionType, Tile, WorkerType};
+
+fn use_money() -> RwSignal<f64> {
+    use_context::<GameState>()
+        .expect("GameState context not found.")
+        .cash
+}
+fn use_tile() -> Memo<Tile> {
+    use_context::<TileContext>()
+        .expect("TileContext not found.")
+        .0
+}
 
 #[derive(Params, PartialEq, Clone)]
 pub struct TileParams {
@@ -27,7 +28,7 @@ pub struct TileParams {
 }
 
 #[derive(Clone)]
-pub struct TileContext(Memo<Option<Tile>>);
+pub struct TileContext(Memo<Tile>);
 
 #[component]
 pub fn TilePage() -> impl IntoView {
@@ -46,6 +47,7 @@ pub fn TilePage() -> impl IntoView {
             .iter()
             .find(|tile| tile.id == tile_id())
             .cloned()
+            .expect("Failed to find tile")
     });
 
     provide_context(TileContext(tile));
@@ -96,7 +98,7 @@ pub fn TilePage() -> impl IntoView {
                     <div class="flex flex-col w-full h-full">
                         <div class="flex flex-1 border-b border-primary-border overflow-hidden">
                             {move || {
-                                let inventory = tile.get().unwrap().tile_state.inventory;
+                                let inventory = tile.get().tile_state.inventory;
                                 view! { <InventoryContainer inventory=inventory /> }
                             }}
                         </div>
@@ -115,12 +117,12 @@ pub fn TilePage() -> impl IntoView {
 
 #[component]
 pub fn OverviewTab() -> impl IntoView {
-    let tile = use_context::<TileContext>().expect("context").0;
+    let tile = use_tile().get();
 
     view! {
         <div class="flex flex-col">
             <ul>
-                <li>{move || { tile.get().unwrap().tile_state.buildings.housing.cheap.get() }}</li>
+                <li>{move || { tile.tile_state.buildings.housing.cheap.get() }}</li>
             </ul>
         </div>
     }
@@ -128,9 +130,8 @@ pub fn OverviewTab() -> impl IntoView {
 
 #[component]
 pub fn BuildingsTab() -> impl IntoView {
-    let game_state = use_context::<GameState>().expect("game state context");
-    let tile = use_context::<TileContext>().expect("tile context").0;
-    let money = game_state.cash;
+    let tile = use_tile();
+    let money = use_money();
 
     view! {
         <Accordion of_type=AccordionType::Multiple collapsible=true>
@@ -138,33 +139,37 @@ pub fn BuildingsTab() -> impl IntoView {
                 <AccordionTrigger>"Production Buildings"</AccordionTrigger>
                 <AccordionContent>
                     <For
-                        each=move || ProductionBuildingType::all()
+                        each=move || ProductionType::all()
                         key=|prod_type| *prod_type
-                        children=move |production_type: ProductionBuildingType| {
+                        children=move |production_type: ProductionType| {
+                            let details = production_type.details();
                             view! {
                                 <div class="w-full flex justify-between pb-2">
                                     <div class="flex flex-col">
                                         <div class="text-md font-semibold">
                                             {move || {
                                                 format!(
-                                                    "Water pump ({})",
-                                                    tile
-                                                        .get()
-                                                        .unwrap()
-                                                        .owned_production_buildings(production_type),
+                                                    "{} ({})",
+                                                    details.name,
+                                                    tile.get().owned_production_buildings(production_type),
                                                 )
                                             }}
                                         </div>
-                                        <div class="text-sm">"Extracts liquid water."</div>
+                                        <div class="text-sm">{details.description}</div>
                                     </div>
-                                    <button
-                                        on:click=move |_| {
-                                            tile.get().unwrap().build_production(production_type, money)
-                                        }
-                                        class="border font-bold hover:bg-destructive-dim/30 border-destructive-dim hover:cursor-pointer my-1 py-2 px-4"
-                                    >
-                                        "BUILD"
-                                    </button>
+                                    <div class="space-x-6">
+                                        <span class="font-semibold text-lg text-highlight-dim">
+                                            {move || format!("${:.2}", details.cost)}
+                                        </span>
+                                        <button
+                                            on:click=move |_| {
+                                                tile.get().build_production(production_type, money)
+                                            }
+                                            class="border font-bold hover:bg-destructive-dim/30 border-destructive-dim hover:cursor-pointer my-1 py-2 px-4"
+                                        >
+                                            "BUILD"
+                                        </button>
+                                    </div>
                                 </div>
                             }
                         }
@@ -178,29 +183,34 @@ pub fn BuildingsTab() -> impl IntoView {
                         each=move || HousingType::all()
                         key=|housing_type| *housing_type
                         children=move |housing_type: HousingType| {
+                            let details = housing_type.details();
                             view! {
                                 <div class="w-full flex justify-between pb-2">
                                     <div class="flex flex-col">
                                         <div class="text-md font-semibold">
                                             {move || {
                                                 format!(
-                                                    "Cheap housing ({})",
-                                                    tile.get().unwrap().owned_housing(housing_type),
+                                                    "{} ({})",
+                                                    details.name,
+                                                    tile.get().owned_housing(housing_type),
                                                 )
                                             }}
                                         </div>
-                                        <div class="text-sm">
-                                            "Can house up to 10 basic workers."
-                                        </div>
+                                        <div class="text-sm">{details.description}</div>
                                     </div>
-                                    <button
-                                        on:click=move |_| {
-                                            tile.get().unwrap().build_housing(housing_type, money)
-                                        }
-                                        class="border font-bold hover:cursor-pointer my-1 border-destructive-dim hover:bg-destructive-dim/30 py-2 px-4"
-                                    >
-                                        "BUILD"
-                                    </button>
+                                    <div class="space-x-6">
+                                        <span class="font-semibold text-lg text-highlight-dim">
+                                            {move || format!("${:.2}", details.cost)}
+                                        </span>
+                                        <button
+                                            on:click=move |_| {
+                                                tile.get().build_housing(housing_type, money)
+                                            }
+                                            class="border font-bold hover:bg-destructive-dim/30 border-destructive-dim hover:cursor-pointer my-1 py-2 px-4"
+                                        >
+                                            "BUILD"
+                                        </button>
+                                    </div>
                                 </div>
                             }
                                 .into_any()
@@ -214,12 +224,9 @@ pub fn BuildingsTab() -> impl IntoView {
 
 #[component]
 pub fn WorkersTab() -> impl IntoView {
-    let game_state = use_context::<GameState>().expect("Game state context");
-    let tile = use_context::<TileContext>()
-        .expect("context of tile type")
-        .0;
-    let money = game_state.cash;
-    let error_message = RwSignal::new(None);
+    let money = use_money();
+    let tile = use_tile();
+    // let error_message = RwSignal::new(None);
 
     view! {
         <Accordion of_type=AccordionType::Multiple collapsible=true>
@@ -230,32 +237,34 @@ pub fn WorkersTab() -> impl IntoView {
                         each=move || WorkerType::all()
                         key=|worker_type| *worker_type
                         children=move |worker_type: WorkerType| {
+                            let details = worker_type.details();
                             view! {
                                 <div class="flex flex-1 justify-between items-center pb-2">
                                     <div class="flex flex-col">
-                                        <div class="text-md font-semibold">"Basic workers"</div>
+                                        <div class="text-md font-semibold">{details.name}</div>
                                         <div class="text-sm">
                                             {move || {
-                                                let tile = tile.get().unwrap();
                                                 format!(
                                                     "Capacity {}/{}",
-                                                    tile.hired_workers(worker_type),
-                                                    tile.available_workers(worker_type),
+                                                    tile.get().hired_workers(worker_type),
+                                                    tile.get().available_workers(worker_type),
                                                 )
                                             }}
                                         </div>
                                     </div>
-                                    <button
-                                        class="border font-bold hover:cursor-pointer my-1 border-destructive-dim hover:bg-destructive-dim/30 py-2 px-4"
-                                        on:click=move |_| {
-                                            error_message
-                                                .set(
-                                                    tile.get().unwrap().hire_worker(worker_type, money).err(),
-                                                );
-                                        }
-                                    >
-                                        "HIRE"
-                                    </button>
+                                    <div class="space-x-6">
+                                        <span class="font-semibold text-lg text-highlight-dim">
+                                            {move || format!("${:.2}", details.cost)}
+                                        </span>
+                                        <button
+                                            on:click=move |_| {
+                                                tile.get().hire_worker(worker_type, money).err();
+                                            }
+                                            class="border font-bold hover:bg-destructive-dim/30 border-destructive-dim hover:cursor-pointer my-1 py-2 px-4"
+                                        >
+                                            "HIRE"
+                                        </button>
+                                    </div>
                                 </div>
                             }
                         }
