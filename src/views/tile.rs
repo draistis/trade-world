@@ -16,7 +16,7 @@ fn use_money() -> RwSignal<f64> {
         .expect("GameState context not found.")
         .cash
 }
-fn use_tile() -> Memo<Tile> {
+fn use_tile() -> RwSignal<Tile> {
     use_context::<TileContext>()
         .expect("TileContext not found.")
         .0
@@ -28,7 +28,7 @@ pub struct TileParams {
 }
 
 #[derive(Clone)]
-pub struct TileContext(Memo<Tile>);
+pub struct TileContext(RwSignal<Tile>);
 
 #[component]
 pub fn TilePage() -> impl IntoView {
@@ -37,18 +37,12 @@ pub fn TilePage() -> impl IntoView {
     let params = use_params::<TileParams>();
     let tile_id = move || params.get().unwrap().id.unwrap();
 
-    let inv2 = RwSignal::new(Inventory::empty());
-    let inv3 = RwSignal::new(Inventory::one_item());
-
-    let tile = Memo::new(move |_| {
-        game_state
-            .tiles
-            .get()
-            .iter()
-            .find(|tile| tile.id == tile_id())
-            .cloned()
-            .expect("Failed to find tile")
-    });
+    let tile = game_state
+        .tiles
+        .iter()
+        .copied()
+        .find(|&tile| tile.get().id == tile_id())
+        .expect("Failed to find tile");
 
     provide_context(TileContext(tile));
 
@@ -102,12 +96,6 @@ pub fn TilePage() -> impl IntoView {
                                 view! { <InventoryContainer inventory=inventory /> }
                             }}
                         </div>
-                        <div class="flex flex-1 border-b border-primary-border overflow-hidden">
-                            <InventoryContainer inventory=inv2 />
-                        </div>
-                        <div class="flex flex-1 overflow-hidden h-1/3">
-                            <InventoryContainer inventory=inv3 />
-                        </div>
                     </div>
                 </div>
             </div>
@@ -117,12 +105,12 @@ pub fn TilePage() -> impl IntoView {
 
 #[component]
 pub fn OverviewTab() -> impl IntoView {
-    let tile = use_tile().get();
+    let tile = use_tile();
 
     view! {
         <div class="flex flex-col">
             <ul>
-                <li>{move || { tile.tile_state.buildings.housing.cheap.get() }}</li>
+                <li>{move || { tile.get().tile_state.buildings.housing.cheap.get() }}</li>
             </ul>
         </div>
     }
@@ -163,7 +151,12 @@ pub fn BuildingsTab() -> impl IntoView {
                                         </span>
                                         <button
                                             on:click=move |_| {
-                                                tile.get().build_production(production_type, money)
+                                                if let Err(err) = tile
+                                                    .get()
+                                                    .build_production(production_type, money, 1)
+                                                {
+                                                    leptos::logging::log!("{}", err);
+                                                }
                                             }
                                             class="border font-bold hover:bg-destructive-dim/30 border-destructive-dim hover:cursor-pointer my-1 py-2 px-4"
                                         >
@@ -204,7 +197,12 @@ pub fn BuildingsTab() -> impl IntoView {
                                         </span>
                                         <button
                                             on:click=move |_| {
-                                                tile.get().build_housing(housing_type, money)
+                                                if let Err(err) = tile
+                                                    .get()
+                                                    .build_housing(housing_type, money, 1)
+                                                {
+                                                    leptos::logging::log!("{}",err);
+                                                }
                                             }
                                             class="border font-bold hover:bg-destructive-dim/30 border-destructive-dim hover:cursor-pointer my-1 py-2 px-4"
                                         >
@@ -247,7 +245,7 @@ pub fn WorkersTab() -> impl IntoView {
                                                 format!(
                                                     "Capacity {}/{}",
                                                     tile.get().hired_workers(worker_type),
-                                                    tile.get().available_workers(worker_type),
+                                                    tile.get().workers_can_accommodate(worker_type),
                                                 )
                                             }}
                                         </div>
@@ -258,7 +256,12 @@ pub fn WorkersTab() -> impl IntoView {
                                         </span>
                                         <button
                                             on:click=move |_| {
-                                                tile.get().hire_worker(worker_type, money).err();
+                                                if let Err(err) = tile
+                                                    .get()
+                                                    .hire_workers(worker_type, money, 1)
+                                                {
+                                                    leptos::logging::log!("{}",err);
+                                                }
                                             }
                                             class="border font-bold hover:bg-destructive-dim/30 border-destructive-dim hover:cursor-pointer my-1 py-2 px-4"
                                         >

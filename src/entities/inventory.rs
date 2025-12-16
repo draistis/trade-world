@@ -49,11 +49,11 @@ impl Inventory {
         Self {
             id: Uuid::new_v4().to_string(),
             name: "".to_string(),
-            items: RwSignal::new(Vec::from([("DBG", 50)])),
+            items: RwSignal::new(Vec::new()),
             max_volume: RwSignal::new(500_000),
             max_weight: RwSignal::new(500_000),
-            weight: RwSignal::new(255_000),
-            volume: RwSignal::new(405_000),
+            weight: RwSignal::new(0),
+            volume: RwSignal::new(0),
         }
     }
     pub fn one_item() -> Self {

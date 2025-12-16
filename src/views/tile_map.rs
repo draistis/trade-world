@@ -43,43 +43,43 @@ fn TileOverview() -> impl IntoView {
 
         game_state
             .tiles
-            .get()
             .iter()
-            .find(|tile| tile.id == selected_tile.0.get())
-            .cloned()
+            .find(|&tile| tile.get().id == selected_tile.0.get())
+            .copied()
             .unwrap_or_default()
     });
 
     let buy_tile = move |_| {
-        if game_state.cash.get() >= tile_info.get().price {
-            *game_state.cash.write() -= tile_info.get().price;
-            tile_info.get().is_owned.set(true);
+        let tile_info = tile_info.get().get();
+        if game_state.cash.get() >= tile_info.price {
+            *game_state.cash.write() -= tile_info.price;
+            tile_info.is_owned.set(true);
         }
     };
 
     view! {
         <div class="flex flex-col h-full">
             <div class="flex p-4 border-b border-primary-border">
-                <div class="text-4xl font-semibold">{move || tile_info.get().id}</div>
+                <div class="text-4xl font-semibold">{move || tile_info.get().get().id}</div>
             </div>
 
             <div class="flex-1 flex p-4 space-y-4 overflow-y-auto border-b border-primary-border">
                 <div class="text-2xl">
-                    <p class="">"Description: "{move || tile_info.get().description}</p>
+                    <p class="">"Description: "{move || tile_info.get().get().description}</p>
                     <p class="">
-                        "Resources: "{move || format!("{:?}", tile_info.get().resources)}
+                        "Resources: "{move || format!("{:?}", tile_info.get().get().resources)}
                     </p>
                 </div>
             </div>
 
             <div class="p-6 flex justify-between items-center h-20">
                 <Show
-                    when=move || !tile_info.get().is_owned.get()
+                    when=move || !tile_info.get().get().is_owned.get()
                     fallback=move || {
                         view! {
                             <div class="text-3xl font-semibold">"Purchased"</div>
                             <A
-                                href=format!("/tile/{}", tile_info.get().id)
+                                href=format!("/tile/{}", tile_info.get().get().id)
                                 attr:class="px-6 py-2 border-2 font-bold text-xl hover:bg-hover-btn transition-colors"
                             >
                                 "MANAGE TILE"
@@ -88,7 +88,7 @@ fn TileOverview() -> impl IntoView {
                     }
                 >
                     <div class="text-3xl font-semibold">
-                        "Price: $"{move || format!("{:.2}", tile_info.get().price)}
+                        "Price: $"{move || format!("{:.2}", tile_info.get().get().price)}
                     </div>
                     <button
                         on:click=buy_tile
@@ -144,7 +144,7 @@ fn Grid() -> impl IntoView {
     };
 
     let game_state = use_context::<GameState>().expect("cannot get GameState from context");
-    let tiles = game_state.tiles.get_untracked();
+    let tiles = game_state.tiles;
 
     view! {
         <svg
@@ -166,6 +166,7 @@ fn Grid() -> impl IntoView {
                 {tiles
                     .into_iter()
                     .map(|tile| {
+                        let tile = tile.get();
                         view! {
                             <Tile row=tile.row col=tile.col name=tile.id tile_size is_dragging />
                         }

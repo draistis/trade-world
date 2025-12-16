@@ -8,7 +8,7 @@ use crate::entities::Tile;
 pub struct GameState {
     pub cash: RwSignal<f64>,
     pub inventory: RwSignal<HashMap<String, f64>>,
-    pub tiles: RwSignal<Vec<Tile>>,
+    pub tiles: Vec<RwSignal<Tile>>,
 }
 
 impl GameState {
@@ -16,7 +16,7 @@ impl GameState {
         Self {
             cash: RwSignal::new(10000.),
             inventory: RwSignal::new(HashMap::new()),
-            tiles: RwSignal::new(Vec::new()),
+            tiles: Vec::new(),
         }
     }
 }

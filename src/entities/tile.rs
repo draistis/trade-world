@@ -1,4 +1,4 @@
-use crate::entities::{Buildings, Housing, HousingType, ProductionType, WorkerType, Workers};
+use crate::entities::{Buildings, Housing, HousingType, Land, ProductionType, WorkerType, Workers};
 use leptos::prelude::*;
 
 use crate::entities::Inventory;
@@ -13,6 +13,25 @@ pub struct Tile {
     pub col: u32,
     pub is_owned: RwSignal<bool>,
     pub tile_state: TileState,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+pub struct TileState {
+    pub inventory: RwSignal<Inventory>,
+    pub buildings: Buildings,
+    pub land: Land,
+    pub workers: Workers,
+}
+
+impl TileState {
+    pub fn new() -> Self {
+        Self {
+            inventory: RwSignal::new(Inventory::empty()),
+            buildings: Buildings::new(),
+            land: Land::new(500),
+            workers: Workers::new(),
+        }
+    }
 }
 
 impl Tile {
@@ -30,38 +49,36 @@ impl Tile {
     }
 
     pub fn hired_workers(&self, worker_type: WorkerType) -> u64 {
-        self.tile_state.workers.get_workers(worker_type)
+        self.tile_state.workers.get_total(worker_type)
     }
 
-    pub fn available_workers(&self, worker_type: WorkerType) -> u64 {
+    pub fn workers_can_accommodate(&self, worker_type: WorkerType) -> u64 {
         self.tile_state.buildings.get_capacity(worker_type)
     }
 
-    pub fn hire_worker(&self, worker_type: WorkerType, money: RwSignal<f64>) -> Result<(), String> {
-        let details = worker_type.details();
+    pub fn hire_workers(
+        &self,
+        worker_type: WorkerType,
+        money: RwSignal<f64>,
+        amount: u64,
+    ) -> Result<(), String> {
+        let cost = worker_type.details().cost;
+        let total_cost = cost * amount as f64;
 
-        if self.available_workers(worker_type) <= self.hired_workers(worker_type) {
-            return Err("Insufficient housing space.".to_string());
+        if self.workers_can_accommodate(worker_type) <= amount {
+            return Err(format!(
+                "Cannot hire {} workers, only space for {}.",
+                amount,
+                self.workers_can_accommodate(worker_type)
+            ));
         }
 
-        if money.get() < details.cost {
-            return Err(format!("Insufficient funds. Need ${}", details.cost));
+        if money.get() < total_cost {
+            return Err(format!("Insufficient funds. Need ${}.", total_cost));
         }
 
-        money.update(|m| *m -= details.cost);
-
-        match worker_type {
-            WorkerType::Basic => {
-                self.tile_state.workers.basic.update(|a| *a += 1);
-            }
-            WorkerType::Advanced => {
-                self.tile_state.workers.advanced.update(|a| *a += 1);
-            }
-            WorkerType::Expert => {
-                self.tile_state.workers.expert.update(|a| *a += 1);
-            }
-        }
-
+        money.update(|m| *m -= total_cost);
+        self.tile_state.workers.hire(worker_type, amount);
         Ok(())
     }
 
@@ -74,30 +91,41 @@ impl Tile {
         }
     }
 
-    pub fn build_housing(&self, housing_type: HousingType, money: RwSignal<f64>) {
+    pub fn build_housing(
+        &self,
+        housing_type: HousingType,
+        money: RwSignal<f64>,
+        amount: u64,
+    ) -> Result<(), String> {
         let details = housing_type.details();
+        let total_cost = details.cost * amount as f64;
+        let total_land = details.land_used * amount;
 
-        if money.get() < details.cost {
-            return;
+        if money.get() < total_cost {
+            return Err(format!("Insufficient funds. Need ${}.", total_cost));
         }
 
-        money.update(|m| *m -= details.cost);
+        self.tile_state.land.use_land(total_land)?;
 
-        match housing_type {
-            HousingType::Cheap => {
-                self.tile_state.buildings.housing.cheap.update(|a| *a += 1);
-            }
-            HousingType::Standard => {
-                self.tile_state
-                    .buildings
-                    .housing
-                    .standard
-                    .update(|a| *a += 1);
-            }
-            HousingType::Fancy => {
-                self.tile_state.buildings.housing.fancy.update(|a| *a += 1);
-            }
-        }
+        money.update(|m| *m -= total_cost);
+        self.tile_state
+            .buildings
+            .housing
+            .build(housing_type, amount);
+        Ok(())
+    }
+
+    pub fn destroy_housing(&self, housing_type: HousingType, amount: u64) -> Result<(), String> {
+        let details = housing_type.details();
+        let total_land = details.land_used * amount;
+
+        // Should only fail on bad implementation, not in client, surely
+        self.tile_state.land.free_land(total_land)?;
+        self.tile_state
+            .buildings
+            .housing
+            .destroy(housing_type, amount)?;
+        Ok(())
     }
 
     pub fn owned_production_buildings(&self, production_type: ProductionType) -> u64 {
@@ -111,67 +139,37 @@ impl Tile {
         }
     }
 
-    pub fn build_production(&self, production_type: ProductionType, money: RwSignal<f64>) {
+    pub fn build_production(
+        &self,
+        production_type: ProductionType,
+        money: RwSignal<f64>,
+        amount: u64,
+    ) -> Result<(), String> {
         let details = production_type.details();
+        let total_cost = details.cost * amount as f64;
+        let total_land = details.land * amount;
 
-        if money.get() < details.cost {
-            return;
+        if money.get() < total_cost {
+            return Err(format!("Insufficient funds. Need ${:.2}.", total_cost));
         }
 
-        money.update(|m| *m -= details.cost);
-
-        match production_type {
-            ProductionType::Sawmill => {
-                self.tile_state
-                    .buildings
-                    .production
-                    .sawmill
-                    .update(|a| *a += 1);
-            }
-            ProductionType::Warehouse => {
-                self.tile_state
-                    .buildings
-                    .production
-                    .warehouse
-                    .update(|a| *a += 1);
-            }
-            ProductionType::WaterPump => {
-                self.tile_state
-                    .buildings
-                    .production
-                    .water_pump
-                    .update(|a| *a += 1);
-            }
-            ProductionType::Workshop => {
-                self.tile_state
-                    .buildings
-                    .production
-                    .workshop
-                    .update(|a| *a += 1);
-            }
+        if self.tile_state.land.available.get() < total_land {
+            return Err(format!(
+                "Insufficient land. Need {}, have {}.",
+                total_land,
+                self.tile_state.land.available.get()
+            ));
         }
-    }
-}
 
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
-pub struct TileState {
-    pub inventory: RwSignal<Inventory>,
-    pub total_land: RwSignal<u32>,
-    pub empty_land: RwSignal<u32>,
-    pub buildings: Buildings,
-    pub workers: Workers,
-    pub housing: Housing,
-}
+        self.tile_state.workers.check_assign(&details.workers)?;
 
-impl TileState {
-    pub fn new() -> Self {
-        Self {
-            inventory: RwSignal::new(Inventory::new()),
-            total_land: RwSignal::new(500),
-            empty_land: RwSignal::new(500),
-            buildings: Buildings::new(),
-            workers: Workers::new(),
-            housing: Housing::new(),
-        }
+        self.tile_state.land.use_land(total_land).unwrap();
+
+        self.tile_state
+            .buildings
+            .production
+            .build(production_type, amount);
+        money.update(|m| *m -= total_cost);
+        Ok(())
     }
 }

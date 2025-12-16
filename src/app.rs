@@ -34,7 +34,7 @@ pub fn ProvideGameState() -> impl IntoView {
     let mut game_state = GameState::new();
 
     let mut tiles = Vec::new();
-    tiles.push(Tile {
+    tiles.push(RwSignal::new(Tile {
         id: "STR-1001",
         description: "Test tile 1",
         resources: ["Water: 60%", "Wood: 24%"].into(),
@@ -44,8 +44,8 @@ pub fn ProvideGameState() -> impl IntoView {
         col: 0,
         tile_state: TileState::new(),
         ..Default::default()
-    });
-    tiles.push(Tile {
+    }));
+    tiles.push(RwSignal::new(Tile {
         id: "STR-1002",
         description: "Test tile 2",
         resources: ["Water: 60%", "Wood: 24%"].into(),
@@ -55,8 +55,8 @@ pub fn ProvideGameState() -> impl IntoView {
         col: 1,
         tile_state: TileState::new(),
         ..Default::default()
-    });
-    tiles.push(Tile {
+    }));
+    tiles.push(RwSignal::new(Tile {
         id: "STR-1003",
         description: "Test tile 3",
         resources: ["Water: 60%", "Wood: 24%"].into(),
@@ -66,8 +66,8 @@ pub fn ProvideGameState() -> impl IntoView {
         col: 0,
         tile_state: TileState::new(),
         ..Default::default()
-    });
-    tiles.push(Tile {
+    }));
+    tiles.push(RwSignal::new(Tile {
         id: "STR-1004",
         description: "Test tile 4",
         resources: ["Water: 60%", "Wood: 24%"].into(),
@@ -77,9 +77,9 @@ pub fn ProvideGameState() -> impl IntoView {
         col: 1,
         tile_state: TileState::new(),
         ..Default::default()
-    });
+    }));
 
-    game_state.tiles = RwSignal::new(tiles);
+    game_state.tiles = tiles;
 
     provide_context(game_state);
     provide_context(DragState {
