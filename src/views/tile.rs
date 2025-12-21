@@ -9,14 +9,14 @@ use crate::components::{
 };
 use crate::components::{DragState, DraggableItemOverlay, Header, InventoryContainer};
 use crate::components::{Tabs, TabsContent, TabsList, TabsTrigger};
-use crate::entities::{GameState, HousingType, Inventory, ProductionType, Tile, WorkerType};
+use crate::entities::{GameState, HousingType, ProductionType, Tile, WorkerType};
 
 fn use_money() -> RwSignal<f64> {
     use_context::<GameState>()
         .expect("GameState context not found.")
         .cash
 }
-fn use_tile() -> RwSignal<Tile> {
+fn use_tile() -> Tile<'static> {
     use_context::<TileContext>()
         .expect("TileContext not found.")
         .0
@@ -27,8 +27,8 @@ pub struct TileParams {
     pub id: Option<String>,
 }
 
-#[derive(Clone)]
-pub struct TileContext(RwSignal<Tile>);
+#[derive(Clone, Copy)]
+pub struct TileContext(Tile<'static>);
 
 #[component]
 pub fn TilePage() -> impl IntoView {
@@ -41,7 +41,7 @@ pub fn TilePage() -> impl IntoView {
         .tiles
         .iter()
         .copied()
-        .find(|&tile| tile.get().id == tile_id())
+        .find(|&tile| tile.id == tile_id())
         .expect("Failed to find tile");
 
     provide_context(TileContext(tile));
@@ -76,6 +76,7 @@ pub fn TilePage() -> impl IntoView {
                             <TabsTrigger value="overview">"OVERVIEW"</TabsTrigger>
                             <TabsTrigger value="buildings">"BUILDINGS"</TabsTrigger>
                             <TabsTrigger value="workers">"WORKERS"</TabsTrigger>
+                            <TabsTrigger value="production">"PRODUCTION"</TabsTrigger>
                         </TabsList>
                         <TabsContent value="overview">
                             <OverviewTab />
@@ -92,7 +93,7 @@ pub fn TilePage() -> impl IntoView {
                     <div class="flex flex-col w-full h-full">
                         <div class="flex flex-1 border-b border-primary-border overflow-hidden">
                             {move || {
-                                let inventory = tile.get().tile_state.inventory;
+                                let inventory = tile.tile_state.inventory;
                                 view! { <InventoryContainer inventory=inventory /> }
                             }}
                         </div>
@@ -110,7 +111,7 @@ pub fn OverviewTab() -> impl IntoView {
     view! {
         <div class="flex flex-col">
             <ul>
-                <li>{move || { tile.get().tile_state.buildings.housing.cheap.get() }}</li>
+                <li>{move || { tile.tile_state.buildings.housing.cheap.get() }}</li>
             </ul>
         </div>
     }
@@ -139,7 +140,7 @@ pub fn BuildingsTab() -> impl IntoView {
                                                 format!(
                                                     "{} ({})",
                                                     details.name,
-                                                    tile.get().owned_production_buildings(production_type),
+                                                    tile.owned_production_buildings(production_type),
                                                 )
                                             }}
                                         </div>
@@ -152,7 +153,6 @@ pub fn BuildingsTab() -> impl IntoView {
                                         <button
                                             on:click=move |_| {
                                                 if let Err(err) = tile
-                                                    .get()
                                                     .build_production(production_type, money, 1)
                                                 {
                                                     leptos::logging::log!("{}", err);
@@ -185,7 +185,7 @@ pub fn BuildingsTab() -> impl IntoView {
                                                 format!(
                                                     "{} ({})",
                                                     details.name,
-                                                    tile.get().owned_housing(housing_type),
+                                                    tile.owned_housing(housing_type),
                                                 )
                                             }}
                                         </div>
@@ -197,9 +197,7 @@ pub fn BuildingsTab() -> impl IntoView {
                                         </span>
                                         <button
                                             on:click=move |_| {
-                                                if let Err(err) = tile
-                                                    .get()
-                                                    .build_housing(housing_type, money, 1)
+                                                if let Err(err) = tile.build_housing(housing_type, money, 1)
                                                 {
                                                     leptos::logging::log!("{}",err);
                                                 }
@@ -244,8 +242,8 @@ pub fn WorkersTab() -> impl IntoView {
                                             {move || {
                                                 format!(
                                                     "Capacity {}/{}",
-                                                    tile.get().hired_workers(worker_type),
-                                                    tile.get().workers_can_accommodate(worker_type),
+                                                    tile.hired_workers(worker_type),
+                                                    tile.workers_can_accommodate(worker_type),
                                                 )
                                             }}
                                         </div>
@@ -256,10 +254,7 @@ pub fn WorkersTab() -> impl IntoView {
                                         </span>
                                         <button
                                             on:click=move |_| {
-                                                if let Err(err) = tile
-                                                    .get()
-                                                    .hire_workers(worker_type, money, 1)
-                                                {
+                                                if let Err(err) = tile.hire_workers(worker_type, money, 1) {
                                                     leptos::logging::log!("{}",err);
                                                 }
                                             }
@@ -277,3 +272,12 @@ pub fn WorkersTab() -> impl IntoView {
         </Accordion>
     }
 }
+
+// #[component]
+// pub fn ProductionTab() -> impl IntoView {
+//     let tile = use_tile();
+
+//     view! {
+//         <For each=tile.get
+//     }
+// }

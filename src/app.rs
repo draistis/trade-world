@@ -34,50 +34,50 @@ pub fn ProvideGameState() -> impl IntoView {
     let mut game_state = GameState::new();
 
     let mut tiles = Vec::new();
-    tiles.push(RwSignal::new(Tile {
+    tiles.push(Tile {
         id: "STR-1001",
         description: "Test tile 1",
-        resources: ["Water: 60%", "Wood: 24%"].into(),
+        resources: &["Water: 60%", "Wood: 24%"],
         price: 490.90,
         is_owned: RwSignal::new(false),
         row: 0,
         col: 0,
         tile_state: TileState::new(),
         ..Default::default()
-    }));
-    tiles.push(RwSignal::new(Tile {
+    });
+    tiles.push(Tile {
         id: "STR-1002",
         description: "Test tile 2",
-        resources: ["Water: 60%", "Wood: 24%"].into(),
+        resources: &["Water: 60%", "Wood: 24%"],
         price: 121.00,
         is_owned: RwSignal::new(true),
         row: 0,
         col: 1,
         tile_state: TileState::new(),
         ..Default::default()
-    }));
-    tiles.push(RwSignal::new(Tile {
+    });
+    tiles.push(Tile {
         id: "STR-1003",
         description: "Test tile 3",
-        resources: ["Water: 60%", "Wood: 24%"].into(),
+        resources: &["Water: 60%", "Wood: 24%"],
         price: 525.00,
         is_owned: RwSignal::new(false),
         row: 1,
         col: 0,
         tile_state: TileState::new(),
         ..Default::default()
-    }));
-    tiles.push(RwSignal::new(Tile {
+    });
+    tiles.push(Tile {
         id: "STR-1004",
         description: "Test tile 4",
-        resources: ["Water: 60%", "Wood: 24%"].into(),
+        resources: &["Water: 60%", "Wood: 24%"],
         price: 710.55,
         is_owned: RwSignal::new(false),
         row: 1,
         col: 1,
         tile_state: TileState::new(),
         ..Default::default()
-    }));
+    });
 
     game_state.tiles = tiles;
 

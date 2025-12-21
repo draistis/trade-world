@@ -44,13 +44,13 @@ fn TileOverview() -> impl IntoView {
         game_state
             .tiles
             .iter()
-            .find(|&tile| tile.get().id == selected_tile.0.get())
+            .find(|&tile| tile.id == selected_tile.0.get())
             .copied()
             .unwrap_or_default()
     });
 
     let buy_tile = move |_| {
-        let tile_info = tile_info.get().get();
+        let tile_info = tile_info.get();
         if game_state.cash.get() >= tile_info.price {
             *game_state.cash.write() -= tile_info.price;
             tile_info.is_owned.set(true);
@@ -60,26 +60,26 @@ fn TileOverview() -> impl IntoView {
     view! {
         <div class="flex flex-col h-full">
             <div class="flex p-4 border-b border-primary-border">
-                <div class="text-4xl font-semibold">{move || tile_info.get().get().id}</div>
+                <div class="text-4xl font-semibold">{move || tile_info.get().id}</div>
             </div>
 
             <div class="flex-1 flex p-4 space-y-4 overflow-y-auto border-b border-primary-border">
                 <div class="text-2xl">
-                    <p class="">"Description: "{move || tile_info.get().get().description}</p>
+                    <p class="">"Description: "{move || tile_info.get().description}</p>
                     <p class="">
-                        "Resources: "{move || format!("{:?}", tile_info.get().get().resources)}
+                        "Resources: "{move || format!("{:?}", tile_info.get().resources)}
                     </p>
                 </div>
             </div>
 
             <div class="p-6 flex justify-between items-center h-20">
                 <Show
-                    when=move || !tile_info.get().get().is_owned.get()
+                    when=move || !tile_info.get().is_owned.get()
                     fallback=move || {
                         view! {
                             <div class="text-3xl font-semibold">"Purchased"</div>
                             <A
-                                href=format!("/tile/{}", tile_info.get().get().id)
+                                href=format!("/tile/{}", tile_info.get().id)
                                 attr:class="px-6 py-2 border-2 font-bold text-xl hover:bg-hover-btn transition-colors"
                             >
                                 "MANAGE TILE"
@@ -88,7 +88,7 @@ fn TileOverview() -> impl IntoView {
                     }
                 >
                     <div class="text-3xl font-semibold">
-                        "Price: $"{move || format!("{:.2}", tile_info.get().get().price)}
+                        "Price: $"{move || format!("{:.2}", tile_info.get().price)}
                     </div>
                     <button
                         on:click=buy_tile
@@ -166,7 +166,6 @@ fn Grid() -> impl IntoView {
                 {tiles
                     .into_iter()
                     .map(|tile| {
-                        let tile = tile.get();
                         view! {
                             <Tile row=tile.row col=tile.col name=tile.id tile_size is_dragging />
                         }

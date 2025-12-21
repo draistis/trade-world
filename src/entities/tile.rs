@@ -1,13 +1,15 @@
-use crate::entities::{Buildings, Housing, HousingType, Land, ProductionType, WorkerType, Workers};
 use leptos::prelude::*;
 
 use crate::entities::Inventory;
+use crate::entities::{
+    Buildings, HousingType, Land, ProductionSlot, ProductionType, WorkerType, Workers,
+};
 
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct Tile {
-    pub id: &'static str,
-    pub description: &'static str,
-    pub resources: Vec<&'static str>,
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Tile<'a> {
+    pub id: &'a str,
+    pub description: &'a str,
+    pub resources: &'a [&'a str],
     pub price: f64,
     pub row: u32,
     pub col: u32,
@@ -21,25 +23,27 @@ pub struct TileState {
     pub buildings: Buildings,
     pub land: Land,
     pub workers: Workers,
+    pub production_queue: RwSignal<&'static [ProductionSlot]>,
 }
 
 impl TileState {
     pub fn new() -> Self {
         Self {
-            inventory: RwSignal::new(Inventory::empty()),
+            inventory: RwSignal::new(Inventory::new()),
             buildings: Buildings::new(),
             land: Land::new(500),
             workers: Workers::new(),
+            production_queue: RwSignal::new(&[]),
         }
     }
 }
 
-impl Tile {
+impl Tile<'static> {
     pub fn new() -> Self {
         Self {
             id: "",
             description: "",
-            resources: Vec::new(),
+            resources: &[],
             price: 0.,
             is_owned: RwSignal::new(false),
             row: 0,
@@ -138,6 +142,10 @@ impl Tile {
             ProductionType::Workshop => production.workshop.get(),
         }
     }
+
+    // pub fn get_production(&self) -> impl Iterator {
+    //     self.tile_state.buildings.production.get_all()
+    // }
 
     pub fn build_production(
         &self,

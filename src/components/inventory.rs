@@ -1,8 +1,7 @@
 use leptos::ev::MouseEvent;
 use leptos::prelude::*;
 
-use crate::entities::Inventory;
-use crate::entities::ITEMS;
+use crate::entities::{Inventory, ItemDetails, ItemId};
 
 #[derive(Copy, Clone)]
 pub struct DragState {
@@ -12,7 +11,7 @@ pub struct DragState {
 
 #[derive(Clone, Debug)]
 pub struct DragInfo {
-    pub item_id: &'static str,
+    pub item_id: ItemId,
     pub quantity: u64,
     pub source: RwSignal<Inventory>,
     pub destination: Option<RwSignal<Inventory>>,
@@ -24,11 +23,11 @@ pub struct DragInfo {
 pub fn InventoryContainer(inventory: RwSignal<Inventory>) -> impl IntoView {
     let drag_state = use_context::<DragState>().expect("DragState ctx");
     let is_hovered = RwSignal::new(false);
-    let inv_id = inventory.get_untracked().id.clone();
+    let inv_id = inventory.with_untracked(|inv| inv.id.clone());
 
     let stored_items = Memo::new(move |_| {
-        let mut items: Vec<_> = inventory.get().items.get().into_iter().collect();
-        items.sort_by(|a, b| a.0.cmp(&b.0));
+        let mut items = inventory.with(|inv| inv.items.get());
+        items.sort_by(|a, b| a.id.cmp(&b.id));
         items
     });
 
@@ -52,10 +51,10 @@ pub fn InventoryContainer(inventory: RwSignal<Inventory>) -> impl IntoView {
                 <InventoryTransferOverlay show_overlay destination_inventory=inventory />
                 <For
                     each=move || stored_items.get()
-                    key=|item| item.0
+                    key=|item| item.id
                     children=move |item| {
-                        let item_id = item.0;
-                        let quantity = item.1;
+                        let item_id = item.id;
+                        let quantity = item.quantity;
                         view! { <DraggableItem item_id quantity inventory /> }
                     }
                 />
@@ -66,31 +65,18 @@ pub fn InventoryContainer(inventory: RwSignal<Inventory>) -> impl IntoView {
 
 #[component]
 pub fn DraggableItem(
-    item_id: &'static str,
-    quantity: u64,
+    item_id: ItemId,
+    quantity: RwSignal<u64>,
     inventory: RwSignal<Inventory>,
 ) -> impl IntoView {
     let drag_state = use_context::<DragState>().expect("DragState ctx");
-    let item = ITEMS
-        .iter()
-        .find(|i| i.id == item_id)
-        .expect("failed to find item id in ITEMS list");
+    let item = ItemDetails::get(item_id).expect("item exists");
 
-    let item_qty = move || {
-        inventory
-            .get()
-            .items
-            .get()
-            .iter()
-            .find(|i| i.0 == item_id)
-            .unwrap()
-            .1
-    };
     let on_mouse_down = move |e: MouseEvent| {
         e.prevent_default();
         drag_state.dragging.set(Some(DragInfo {
             item_id,
-            quantity: item_qty(),
+            quantity: quantity.get(),
             source: inventory,
             destination: None,
             to_transfer: 0,
@@ -109,7 +95,7 @@ pub fn DraggableItem(
         >
             <span class="pointer-events-none">{item.id}</span>
             <div class="absolute bottom-0 right-0 flex items-center justify-center px-1 bg-black/80 text-white text-xs font-bold pointer-events-none rounded-tl-lg">
-                {item_qty}
+                {quantity.get()}
             </div>
         </div>
     }
@@ -125,10 +111,7 @@ pub fn DraggableItemOverlay() -> impl IntoView {
         }>
             {move || {
                 let info = drag_state.dragging.get().unwrap();
-                let item = ITEMS
-                    .iter()
-                    .find(|i| i.id == info.item_id)
-                    .expect("item missing from ITEMS");
+                let item = ItemDetails::get(info.item_id).expect("item exists");
                 let (x, y) = drag_state.mouse_pos.get();
                 let (off_x, off_y) = info.offset;
                 let item_qty = move || {
@@ -137,9 +120,9 @@ pub fn DraggableItemOverlay() -> impl IntoView {
                         .items
                         .get()
                         .iter()
-                        .find(|i| i.0 == info.item_id)
-                        .unwrap_or(&("NAI", 0))
-                        .1
+                        .find(|i| i.id == info.item_id)
+                        .map(|stack| stack.quantity.get())
+                        .unwrap_or(0)
                 };
 
                 view! {
@@ -165,7 +148,7 @@ pub fn DraggableItemOverlay() -> impl IntoView {
 fn InventoryCapacityProgress(inventory: RwSignal<Inventory>) -> impl IntoView {
     view! {
         <div class="flex w-full h-fit items-center gap-2">
-            <span class="text-sm text-primary-text">{move || inventory.get().id}</span>
+            <span class="text-sm text-primary-text">{move || inventory.get().name}</span>
             {move || {
                 let max_weight = inventory.get().max_weight.get();
                 let max_volume = inventory.get().max_volume.get();

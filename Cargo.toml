@@ -17,6 +17,7 @@ tokio = { version = "1", features = ["rt-multi-thread"], optional = true }
 wasm-bindgen = { version = "=0.2.105", optional = true }
 uuid = { version = "1.18.1", features = ["v4", "js"] }
 leptos-use = { version = "0.16.3", features = ["use_draggable"] }
+chrono = "0.4.42"
 
 [features]
 hydrate = ["leptos/hydrate", "dep:console_error_panic_hook", "dep:wasm-bindgen"]

@@ -1,6 +1,7 @@
+use chrono::{DateTime, Utc};
 use leptos::prelude::*;
 
-use crate::entities::WorkerType;
+use crate::entities::{ItemId, ItemStack, WorkerType};
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
 pub enum ProductionType {
@@ -80,6 +81,8 @@ impl Production {
             ProductionType::Sawmill => self.sawmill.update(|a| *a += amount),
         }
     }
+
+    // pub fn get_all(&self) -> impl Iterator {}
 }
 
 pub struct ProductionDetails {
@@ -88,4 +91,23 @@ pub struct ProductionDetails {
     pub cost: f64,
     pub workers: Vec<(WorkerType, u64)>,
     pub land: u64,
+}
+
+#[derive(Clone, Debug, PartialEq, Hash, Default)]
+pub struct BuildingId(String);
+
+#[derive(Clone, Debug)]
+pub struct ProductionSlot {
+    pub building_id: BuildingId,
+    pub recipe: Option<Recipe>,
+    pub started_at: Option<DateTime<Utc>>,
+    pub next_completion: Option<DateTime<Utc>>,
+}
+
+#[derive(Clone, Debug)]
+pub struct Recipe {
+    pub item_id: ItemId,
+    pub batch_size: u64,
+    pub batch_duration: chrono::Duration,
+    pub inputs: Vec<ItemStack>,
 }
