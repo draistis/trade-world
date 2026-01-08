@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 
-use crate::entities::Inventory;
+use crate::entities::{BuildingId, Inventory, ItemId, Recipe};
 use crate::entities::{
     Buildings, HousingType, Land, ProductionSlot, ProductionType, WorkerType, Workers,
 };
@@ -23,7 +23,7 @@ pub struct TileState {
     pub buildings: Buildings,
     pub land: Land,
     pub workers: Workers,
-    pub production_queue: RwSignal<&'static [ProductionSlot]>,
+    pub production_queue: RwSignal<Vec<ProductionSlot>>,
 }
 
 impl TileState {
@@ -33,7 +33,28 @@ impl TileState {
             buildings: Buildings::new(),
             land: Land::new(500),
             workers: Workers::new(),
-            production_queue: RwSignal::new(&[]),
+            production_queue: RwSignal::new(Vec::new()),
+        }
+    }
+    pub fn with_production() -> Self {
+        let now = chrono::Utc::now();
+        let slot = ProductionSlot {
+            building_id: BuildingId("avc".to_string()),
+            next_completion: Some(now + chrono::Duration::seconds(10)),
+            recipe: Some(Recipe {
+                item_id: ItemId("CHR"),
+                batch_duration: chrono::TimeDelta::seconds(10),
+                batch_size: 2,
+                inputs: None,
+            }),
+            started_at: Some(now),
+        };
+        Self {
+            inventory: RwSignal::new(Inventory::new()),
+            buildings: Buildings::new(),
+            land: Land::new(500),
+            workers: Workers::new(),
+            production_queue: RwSignal::new([slot].to_vec()),
         }
     }
 }

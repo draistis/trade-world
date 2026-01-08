@@ -4,6 +4,7 @@ use leptos_router::{
     components::{Route, Router, Routes},
     path, StaticSegment,
 };
+use leptos_use::use_interval_fn;
 
 use crate::views::*;
 use crate::{
@@ -53,7 +54,7 @@ pub fn ProvideGameState() -> impl IntoView {
         is_owned: RwSignal::new(true),
         row: 0,
         col: 1,
-        tile_state: TileState::new(),
+        tile_state: TileState::with_production(),
         ..Default::default()
     });
     tiles.push(Tile {
@@ -89,6 +90,39 @@ pub fn ProvideGameState() -> impl IntoView {
 }
 
 #[component]
+pub fn ProductionTicker() -> impl IntoView {
+    let game_state = use_context::<GameState>().expect("GameState context");
+
+    use_interval_fn(
+        move || {
+            let now = chrono::Utc::now();
+
+            for tile in &game_state.tiles {
+                tile.tile_state.production_queue.update(|slots| {
+                    for slot in slots.iter_mut() {
+                        if let Some(completion) = slot.next_completion {
+                            if now >= completion {
+                                if let Some(recipe) = &slot.recipe {
+                                    let inventory = tile.tile_state.inventory;
+                                    inventory.update(|inv| {
+                                        inv.add_item(recipe.item_id, recipe.batch_size);
+                                    });
+                                    slot.started_at = Some(now);
+                                    slot.next_completion = Some(now + recipe.batch_duration);
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        },
+        1000,
+    );
+
+    view! {}
+}
+
+#[component]
 pub fn App() -> impl IntoView {
     // Provides context that manages stylesheets, titles, meta tags, etc.
     provide_meta_context();
@@ -105,6 +139,7 @@ pub fn App() -> impl IntoView {
         <Router>
             <main>
                 <ProvideGameState />
+                <ProductionTicker />
                 <Routes fallback=|| "Page not found.".into_view()>
                     <Route path=StaticSegment("") view=HomePage />
                     <Route path=StaticSegment("/forestry") view=ForestryPage />

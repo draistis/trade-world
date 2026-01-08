@@ -2,7 +2,7 @@ use leptos::prelude::*;
 use uuid::Uuid;
 
 #[derive(Copy, Clone, Debug, PartialEq, Default, PartialOrd, Eq, Ord, Hash)]
-pub struct ItemId(&'static str);
+pub struct ItemId(pub &'static str);
 
 impl IntoRender for ItemId {
     type Output = &'static str;

@@ -94,7 +94,7 @@ pub struct ProductionDetails {
 }
 
 #[derive(Clone, Debug, PartialEq, Hash, Default)]
-pub struct BuildingId(String);
+pub struct BuildingId(pub String);
 
 #[derive(Clone, Debug)]
 pub struct ProductionSlot {
@@ -109,5 +109,5 @@ pub struct Recipe {
     pub item_id: ItemId,
     pub batch_size: u64,
     pub batch_duration: chrono::Duration,
-    pub inputs: Vec<ItemStack>,
+    pub inputs: Option<Vec<ItemStack>>,
 }

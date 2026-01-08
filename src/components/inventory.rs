@@ -95,7 +95,7 @@ pub fn DraggableItem(
         >
             <span class="pointer-events-none">{item.id}</span>
             <div class="absolute bottom-0 right-0 flex items-center justify-center px-1 bg-black/80 text-white text-xs font-bold pointer-events-none rounded-tl-lg">
-                {quantity.get()}
+                {move || quantity.get()}
             </div>
         </div>
     }
